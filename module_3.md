@@ -94,3 +94,20 @@ Differnet audience needs differnet format of explanaition of the system behaviou
 A developer wants a prompt, retrieved context, model output, and every routing step.
 A user wants the inputs that drove the decision and the reason the outcome was reached, in a digestible form.
 A regulator wants a durable, queryable record of inputs, outputs, and decision path.
+
+## Routing decisions to people by stakes, not by volume
+
+A low-confidence, irreversible, high-cost decision almost always needs human review.
+Let confident, reversible, low-cost decisions through. A confident, easily reversed, low-cost decision can usually run without a human. 
+
+Where the human sits is a tradeoff between safety and speed.
+
+What you put in front of the reviewer determines whether the review is accurate. Ensure your reviewers have three things: the inputs that drove the decision, the model's output, and the reason it was flagged. Without the inputs, they cannot tell if the output is correct. 
+
+Consent fatigue is when a system asks for approval dozens of times in a row, and reviewers start clicking through and approving items without reading or providing the quality of review needed. That pattern is what led to plan-level review in Claude Code, where a person approves the plan rather than each step.
+
+Place a gate before any irreversible or high-stakes action an agent would otherwise take autonomously.
+
+Routing by volume rather than stakes either overwhelms reviewers and risks review quality degradation, or allows a high-stakes, irreversible action with no gate at all.
+
+Deciding which decisions count as high stakes takes judgment. A routing rule has three controls: a confidence threshold, the cost of a wrong answer, and a reversibility setting.
