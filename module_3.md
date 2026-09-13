@@ -111,3 +111,17 @@ Place a gate before any irreversible or high-stakes action an agent would otherw
 Routing by volume rather than stakes either overwhelms reviewers and risks review quality degradation, or allows a high-stakes, irreversible action with no gate at all.
 
 Deciding which decisions count as high stakes takes judgment. A routing rule has three controls: a confidence threshold, the cost of a wrong answer, and a reversibility setting.
+
+## Regulations
+
+A regulation states an outcome, but you supply the control and the proof it is operating.
+They say what must be true: that protected data must be handled a certain way, that access must be controlled, and that processing must happen in an authorized environment, but they leave the technical control to you.
+
+three things you own: 
+* a specific technical control that achieves the outcome, 
+* an owner accountable for it,
+* an evidence artifact that shows it is live.
+
+A control no one can demonstrate is indistinguishable from one that is not running.
+
+Each obligation needs a control, a named owner, and a living evidence artifact that is revalidated as the deployment changes.
