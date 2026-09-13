@@ -35,3 +35,62 @@ Treat retrieved text as untrusted and screen tool/content inputs, not just user 
 Action-authorization check that runs before the tool executes.
 Limit input so a large document cannot truncate the work silently.
 Server-side redaction of sensitive fields before anything is logged.
+
+## Guardrails
+
+A guarded request path has a few decision points:
+* Input screening runs before the model call and decides whether the request should reach the model at all.
+* Output screening runs before the response reaches the user and decides whether what the model produced is safe to return.
+* Tool-call authorization runs before any action with side effectst.
+
+Because they sit at different points and check different things, a control at one place does nothing for the others, which is why a single filter cannot cover the whole path.
+
+Tool-call authorization is almost always deterministic check, like an allowlist of permitted actions, identity checks, and scope validation.
+
+There is no control that catches everything. Model-based and deterministic checks fail differently so these controls are deployed in series. Identifying what each one misses ensures each gap is deliberately covered by a different control rather than left open.
+
+A second injection vector: instructions arriving through retrieved content and tool outputs. 
+In a RAG system, a malicious instruction in a retrieved document reaches the model after input screening has already passed the request. In an agentic system, a tool response can carry instructions the model treats as authoritative. 
+
+On the API, responses return a refusal when streaming classifiers intervene. The Messages API reports this as stop_reason: "refusal" accompanied by a stop_details object (available since Claude Opus 4.7). That object carries a policy category along with a readable explanation; both fields are null when the refusal does not map to a named category. 
+
+As a rule, once a refusal is received, reset the conversation context before continuing: remove or rephrase the turn that triggered the refusal, or clear the history. Sending the next request on the same refused context returns further refusals.
+
+How the guardrail layer behaves under failure? Anthropic's built-in model safety controls fail closed, that is they block the traffic on failure. ON the other hand the Architect has to decide what happens when the Guardrails fail, should it fail open (allow traffic) or fail closed (block the traffic). Each gate can pass, block, or fail, and each fail resolves to the direction you chose.
+
+## Skill supply-chain security
+
+An untrusted skill can carry a code-execution exploit: logic that runs commands, reaches out to the network, or touches files the moment it's invoked.
+
+Audit and Log analysis:
+The defense must move earlier in the chain. Before you can trust and call a skill, you need to audit it: open the bundle and read it for two things.
+A skill that passes review clean can still reach out at runtime to fetch code that was never in the package you read. The log review can reveal this.
+
+Watch for out-of-scope operations - behavior that doesn't match the job it claims to perform. 
+
+## Fairness
+
+The retrieval corpus can over-represent or under-represent groups, so the context the model sees is already skewed.
+The framing of the prompt can encode an assumption that pushes outcomes in one direction.
+The examples used in few-shot prompting can carry the same skew the corpus does.
+What happens to the model's output after it is produced, can direct some groups down different paths.
+
+Which of the system points could skew the outcome?
+
+A corpus that over-represents some cases produces unequal outcomes.
+Without decision logging, the team cannot explain the harm or find its source.
+Examples:
+* A routing step that sends some cases down a different path with no log entry.
+* A retrieval step whose returned context is not captured.
+* A model output stored without the inputs that produced it.
+
+Fairness and explainability are architecture requirements. Instrument them at the points where skew can enter.
+Decision must be reconstructable.
+
+## Explain the system behaviour
+
+Differnet audience needs differnet format of explanaition of the system behaviour.
+
+A developer wants a prompt, retrieved context, model output, and every routing step.
+A user wants the inputs that drove the decision and the reason the outcome was reached, in a digestible form.
+A regulator wants a durable, queryable record of inputs, outputs, and decision path.
