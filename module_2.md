@@ -38,6 +38,8 @@ Multi-turn evals are a separate category that scores the system over a sequence 
 
 An eval suite that does not cover the input distribution it will face in production is measuring a different system than the one you are shipping.
 
+Evaluation grading methods: code-based eval, LLM judge, or human review.
+
 ## Defining success criteria 
 Turning a business requirement into a measurable threshold
 A business requirement like "summarize claims accurately" does not really tell you what to measure. 
@@ -112,8 +114,24 @@ Caching requires explicit cache_control markers in the request. Cache writes inc
 
 A statement of work - is a formal document that defines all project requirements, deliverables, timelines, and pricing for a service agreement between a client and a contractor.
 
+"technically feasible" is meaningless if the constraints aren't applied to the expected scale.
+capability question is answered before the constraint questions are asked.
+
+The volume, latency, and input-size constraints are inputs to the feasibility verdict. The verdict is only as sound as the constraints gathered before it.
+
 ## Technical feasibility assessment
-Describes a idea that can be done successfully with available means
+Describes an idea that can be done successfully with available means
+
+                   [ Working Memory Axis ]
+                   Context Window vs. Retrieval
+                                ▲
+                                │
+[ Knowledge Axis ]              │             [ Reasoning Axis ]
+Parametric vs. Non-Parametric ◄─┼─►          Direct Extraction vs.
+                                │             Multi-step Drafting
+                                ▼
+                [ Determinism & Security Axis ]
+                Access Bounds & Output Variance
 
 * Next-token prediction
 The feasibility question to ask: Does this task require probabilistic generation, or does it require precision on specific values? Classification, summarization, and drafting are probabilistic tasks where the model excels. Extraction of specific authoritative values (account numbers, policy dates, claim amounts) requires verification against the source of truth.
@@ -160,3 +178,129 @@ Typical ROI estimation mistakes:
 * The projection assumes full automation when the design requires human review.
 * The run cost is taken from an average rather than the sizing distribution.
 
+## Enterprise integration 
+
+Sizing tells you what the system needs to do and whether it can do it within the constraints. Integration patterns tell you how it connects to the enterprise stack. 
+
+Regulatory and policy constraints, laws and data-residency requirements eliminate entry point options before any other decisions are made. 
+
+Before any integration design begins, work through the constraints in order: identify the governing regulation or policy, determine which entry point and route are still available, choose the integration pattern that fits, and document the identity, data handling, and observability requirements that follow. Skipping any step risks building something that works technically but fails a legal or security review.
+
+The architectural decision:
+* Compliance - Which delivery routes and entry points survive the governing constraint? 
+* Authentication - Where does the user identity boundary sit relative to the Claude integration point? 
+* Authorization - Which capabilities does this user or role have? What data can they access?
+* PII - What data goes into the context window?
+* Audit - What questions will you need to answer after an incident?
+
+Every tool you connect to a Claude system is an attack surface and a cost. Establish the trust hierarchy by scoping each subagent's tool access to its task, so a subagent cannot reach tools its job does not require.
+
+Identity verification belongs on the server, before the Claude call. The user's identity and role should be injected into the system prompt by your server rather than provided by the user in their message.
+
+For each field that enters the context window, ask whether it is necessary for Claude to produce the intended output. Reference identifiers like account numbers or claim numbers are often needed for routing but not for the language task itself. 
+
+## Logging
+
+A production Claude system should log four things:
+
+* The request: model version, input token count, prompt identifier
+* The response: output token count, latency, stop reason
+* The context: user role, session ID, whether caching was applied
+* The outcome: whether the downstream system accepted the output and any rejection signals
+
+Security organizations increasingly treat observability as the precondition for enabling agents at all, since without a trustworthy audit trail, an autonomous system is not approved to act.
+
+Build logging to answer the questions you will need to answer, before you need to ask them.
+
+A multi-tenant system running on a shared API key has no way to attribute a rate limit breach to the tenant that caused it. Separate API keys per tenant are required for attribution and isolation in any production multi-tenant deployment.
+
+## PII
+
+If the field is not required for the language task Claude is performing, it should not be in the context window.
+
+Adding a PII redaction layer, building a server-side identity injection, and instrumenting the observability stack all add time. They also add no visible capability, as the system works without them. The cost of skipping them does not appear until the first audit.
+
+The fix was a data architecture change: a server-side redaction step that strips non-essential PII fields before the Claude call, and a retrieval function that supplies only the fields the language task needs.
+
+## A/B testing
+
+Observability answers the monitoring question. Structured A/B testing answers the improvement question. Without both, you are either flying blind or making changes you cannot measure.
+
+An A/B test for a Claude system follows the same structure as any experiment: 
+a hypothesis (must be specific and testable),
+a treatment group, 
+a control group, 
+a metric,
+a sample size large enough to make the result statistically meaningful. 
+
+The difference from traditional software A/B testing is that LLM outputs are probabilistic, which makes the results noisier and the interaction effects harder to control.
+For LLM systems, the variance in outputs is higher than for deterministic systems, which means the required sample size is larger.
+A primary metric is a single metric defined before the experiment runs. 
+
+Random assignment of requests to treatment (new version) or control (current version). Assignment must be consistent for a given user or session to avoid contamination. Non-random assignment means the groups are not comparable. If the treatment group happens to receive more complex queries, an apparent win may be an artifact of input distribution.
+
+The two questions to ask before declaring a winner are: is the effect large enough to justify the operational overhead of maintaining the new version? And did any secondary metric degrade?
+A prompt change that improves performance on typical inputs may degrade performance on edge-case inputs that appear rarely in the test period but frequently in a future seasonal spike.
+
+There is a way to test against real traffic without exposing - you run the new version in parallel with the current one, send it a copy of live requests, and serve every user the current version's response. The new version's outputs are logged rather than returned, and you score them offline after the fact.
+
+Deploying an unproven or new version of a system carries the risk that it will perform worse than the current version. You should only run a live A/B test if your business and system can tolerate this potential negative impact. Because only a small percentage of your traffic (e.g., 5% or 10%) is routed to the new version (Version B), the exposure to a "worse version" is strictly bounded and controlled.
+
+If your application only gets a few dozen visitors a day, it could take months to gather enough data, making the test impractical. A live A/B test is ideal for high-traffic environments where you can reach the required sample size quickly (e.g., within a few days or weeks).
+
+Offline evaluations (like testing on historical datasets or using automated benchmarks) are highly controlled but cannot perfectly predict how humans will react in real life. For a regulated-industry deployment, where exposing users to an unvalidated model change may not be permissible at all, shadow testing is often the only acceptable way to validate the change.
+
+There is a danger in selecting the metric after seeing the results. It turns a test into a search for whatever metric happened to move. An underpowered experiment with metric selection after the fact produces confirmation rather than evidence.
+
+## Observability
+
+Production observability for a Claude system needs to answer four questions: 
+* what is the system doing?
+* how well is it performing? 
+* when did it change?
+* why did it change? 
+
+Request-level tracing - Every request should produce a trace that includes the model, model version, input token count, output token count, latency, stop reason, and any tool calls made.
+
+Metric aggregation - Aggregate the request-level data into the metrics the dashboard displays: cost per request, latency p50 and p95, task success rate by error type.
+
+Anomaly detection - Set threshold alerts on the metrics that matter for the deployment. A cost spike that exceeds 150% of the 7-day average deserves an alert. A latency p95 that crosses the SLA threshold deserves an alert.
+
+Change attribution - When a metric moves, the instrumentation should be able to distinguish Model drift (the model's behavior on stable inputs changed), data drift (the input distribution changed), and model update effects (the model version changed and the new version behaves differently on existing inputs). 
+
+Classifying what you are looking at before making a change:
+* Prompt failure - The fix is in the prompt, not the model.
+* Hallucination - The fix is grounding through retrieval, tool use, or verification. Stronger instruction will not resolve it.
+* Model mismatch - The chosen tier is wrong for the task.
+* Orchestrator-workers failure - a recoverable subagent failure (retry or flag) looks different from an unrecoverable orchestrator failure.
+
+Discernment - means moving from passive consumption of AI outputs to critical evaluation. You can't just observe metrics you need to ask are they actually good.
+
+Connecting observability data to business value - The observability stack needs a translation layer that connects the technical metrics to the business metrics they drive.
+
+## Efect impact and effect confidence
+Changes has two axes: the expected effect size (how large a difference you expect to see) and the confidence requirement (how certain you need to be before acting on the result). Confidence requirement is driven by the consequence of a wrong call and how reversible it is.
+
+A: Small effect · Low confidence. The effect of a wording change on a clarification message is unlikely to be large. The cost of being wrong is low. A small, fast comparison is appropriate.
+
+B: Small or unknown effect · High confidence. In a high-consequence deployment, a small sample that happens to look positive is not sufficient. The confidence requirement is driven by the consequence of a wrong call, not the expected effect size.
+
+C: Large effect · High confidence. A 30% routing shift has a large effect that affects a substantial fraction of requests. High confidence is required before deploying a change of this magnitude.
+
+D: Large effect on cost · Moderate confidence. The cost effect of a model tier change is expected to be large and is easy to measure. Quality degradation is the risk to monitor, but the cost signal is strong enough to reduce the confidence requirement for the cost component.
+
+E: Small effect · Moderate confidence. Retrieval prompt changes tend to have subtle, distributed effects on output quality. At 200 requests per day, reaching significance on a small effect takes longer, which raises the effective confidence requirement.
+
+## Glossary
+
+BAA (Business Associate Agreement)
+A contract required under HIPAA between a covered entity (or business associate) and a vendor that handles protected health information on its behalf. 
+
+DPA (Data Processing Agreement)
+A contract between a data controller and a data processor defining how personal data may be handled on the controller's behalf, including processing scope, security obligations, sub-processor terms, and breach notification.
+
+Generator-verifier loop
+A two-stage pattern in which a model-generated output is checked by a second pass before being used downstream. The verifier may be a deterministic code-based check (schema validation, comparison against an authoritative value) or a second model call scoped to evaluation. Used as a compensating control where the underlying task requires more precision than single-pass generation reliably provides.
+
+Transient error
+A transient error is a temporary failure that is expected to resolve on its own without any permanent fix, meaning if you try the same request again after a short wait, it will likely succeed.
