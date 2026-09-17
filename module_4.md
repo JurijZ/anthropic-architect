@@ -149,3 +149,19 @@ Example:
 A performance issue prompted a proposal to switch context strategies, the replacement made the switch, and it reintroduced a data-handling pattern that violated the deployment's data-residency constraint. 
 
 The diagram and the decision log both document intention, but not the evidence.
+
+## Outcome document
+
+The artifact that makes a deployment's value legible to a sponsor who was not on the build. 
+
+Volume, latency, and error rate are real and worth tracking, but none of them are a business outcome. 
+The fields that would have made the document usable for the CFO conversation were the before-and-after on the business metric the use case targeted.
+
+Without the before number, there is no story. 
+Without control, the after number is an assertion.
+
+## Glossary
+
+Decision log - A record of each architectural choice that captures not just the decision but the alternatives rejected and the tradeoff each resolved, so a successor does not reverse a load-bearing choice for an understandable wrong reason.
+
+Reversal cost - What it costs to undo a decision after the system has been built around it
