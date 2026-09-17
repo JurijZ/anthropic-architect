@@ -238,7 +238,6 @@ The key split:
 
 The same prompt does not behave identically across models. The prompt-model pairing is what you are actually shipping.
 
-
 ## Prompt caching
 
 Promt cache matches on a stable prefix, putting dynamic content first meant the prefix changed on every request and the cache never hit.
@@ -255,6 +254,15 @@ The economics depend on call frequency and prefix size
 * Claude Cowork - A desktop agent for non-developers that works with local files and applications, automating file and task management on the user's machine under configurable permissions.
 * Claude in Chrome - A browsing agent that operates inside the Chrome browser, navigating pages and taking actions on behalf of the user.
 * Claude for Excel - A spreadsheet agent that operates inside Excel, working directly with cells, formulas, and structured data.
+
+## Multi entry points
+
+A deployment that spans more than one entry point exposes a class of problems a single-entry-point system does not.
+Which entry-point owns which task, and why.
+
+An entry-point chosen for one task gradually taking on another because the routing logic was never documented.
+
+Multi-platform routing multiplies integration points, each with its own auth, logging, and failure profile. The entry-point-responsibility map is the only thing that keeps them understandable over time.
 
 ## Built-time interfaces
 
