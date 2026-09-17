@@ -1,3 +1,12 @@
+## Glossary
+Authoritative - means the source you have agreed to treat as correct
+Adaptive thinking - Extended thinking where the model itself, rather than you, decides whether to think and how much, based on the complexity of each request.
+CSP - Cloud Service Provider 
+Live state - Data that changes during the lifetime of a conversation or process
+Monolithic - everything the model might need is loaded into context up front, in one block. 
+Progressive - an approach where context, instructions, or capabilities are loaded in stages as the work requires them, rather than all at once at the start. 
+Tool use - The model decides when to invoke a tool, what arguments to pass, and how to use the result in its next step. 
+
 
 ## Architecturing basics
 Decomposition is where you assign each part of the request to Claude, to an existing system, or to a human, using the four properties of generative AI as the lens. Getting this wrong by over-assigning to Claude is the most common and most expensive early mistake.
@@ -304,11 +313,3 @@ API or SDK behind the firm's own application, authenticated via SSO, routed thro
 Delivery routes match the region geographic boundary of the model.
 Claude for Government (C4G) - authorized government environments run on a model lag.
 
-## Glossary
-Authoritative - means the source you have agreed to treat as correct
-Adaptive thinking - Extended thinking where the model itself, rather than you, decides whether to think and how much, based on the complexity of each request.
-CSP - Cloud Service Provider 
-Live state - Data that changes during the lifetime of a conversation or process
-Monolithic - everything the model might need is loaded into context up front, in one block. 
-Progressive - an approach where context, instructions, or capabilities are loaded in stages as the work requires them, rather than all at once at the start. 
-Tool use - The model decides when to invoke a tool, what arguments to pass, and how to use the result in its next step. 

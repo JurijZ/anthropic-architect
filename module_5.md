@@ -1,3 +1,11 @@
+## Glossary
+
+Champion-per-department rollout - An adoption pattern that enables one champion per team first to prove the workflow, then seeds adoption batch by batch.
+
+Runbook - A captured set of known symptom-to-cause-to-action paths that lets a team resolve recurring operational issues without the Architect.
+
+Spend posture - The model defaults, model allowlists and restrictions, effort guidance, and spend, rate, and per-user caps set as part of team configuration keep consumption within bounds.
+
 ## Getting people productive with Claude
 
 How to help you get real work done with Claude?
@@ -80,10 +88,3 @@ Cost rose without a usage change - Model tier crept up, or caching regressed.
 
 Frequent failure mode is a slow degradation no one connects to a cause.
 
-## Glossary
-
-Champion-per-department rollout - An adoption pattern that enables one champion per team first to prove the workflow, then seeds adoption batch by batch.
-
-Runbook - A captured set of known symptom-to-cause-to-action paths that lets a team resolve recurring operational issues without the Architect.
-
-Spend posture - The model defaults, model allowlists and restrictions, effort guidance, and spend, rate, and per-user caps set as part of team configuration keep consumption within bounds.

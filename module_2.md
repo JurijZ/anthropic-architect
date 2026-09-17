@@ -1,3 +1,17 @@
+## Glossary
+
+BAA (Business Associate Agreement)
+A contract required under HIPAA between a covered entity (or business associate) and a vendor that handles protected health information on its behalf. 
+
+DPA (Data Processing Agreement)
+A contract between a data controller and a data processor defining how personal data may be handled on the controller's behalf, including processing scope, security obligations, sub-processor terms, and breach notification.
+
+Generator-verifier loop
+A two-stage pattern in which a model-generated output is checked by a second pass before being used downstream. The verifier may be a deterministic code-based check (schema validation, comparison against an authoritative value) or a second model call scoped to evaluation. Used as a compensating control where the underlying task requires more precision than single-pass generation reliably provides.
+
+Transient error
+A transient error is a temporary failure that is expected to resolve on its own without any permanent fix, meaning if you try the same request again after a short wait, it will likely succeed.
+
 
 ## Evals as acceptance criteria
 
@@ -291,16 +305,4 @@ D: Large effect on cost · Moderate confidence. The cost effect of a model tier 
 
 E: Small effect · Moderate confidence. Retrieval prompt changes tend to have subtle, distributed effects on output quality. At 200 requests per day, reaching significance on a small effect takes longer, which raises the effective confidence requirement.
 
-## Glossary
 
-BAA (Business Associate Agreement)
-A contract required under HIPAA between a covered entity (or business associate) and a vendor that handles protected health information on its behalf. 
-
-DPA (Data Processing Agreement)
-A contract between a data controller and a data processor defining how personal data may be handled on the controller's behalf, including processing scope, security obligations, sub-processor terms, and breach notification.
-
-Generator-verifier loop
-A two-stage pattern in which a model-generated output is checked by a second pass before being used downstream. The verifier may be a deterministic code-based check (schema validation, comparison against an authoritative value) or a second model call scoped to evaluation. Used as a compensating control where the underlying task requires more precision than single-pass generation reliably provides.
-
-Transient error
-A transient error is a temporary failure that is expected to resolve on its own without any permanent fix, meaning if you try the same request again after a short wait, it will likely succeed.

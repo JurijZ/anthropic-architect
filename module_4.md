@@ -1,3 +1,9 @@
+## Glossary
+
+Decision log - A record of each architectural choice that captures not just the decision but the alternatives rejected and the tradeoff each resolved, so a successor does not reverse a load-bearing choice for an understandable wrong reason.
+
+Reversal cost - What it costs to undo a decision after the system has been built around it
+
 ## 
 
 You can break down a request, pick a pattern, size a use case, build evals as acceptance criteria, instrument observability, and stand up an auditable control set for a regulated workload. What none of that resolved is the part of the job that happens in rooms with stakeholders: the discovery conversation where the real requirements are set, the approval meeting where a tradeoff is won or lost, the handoff where your design either survives your absence or quietly degrades.
@@ -160,8 +166,3 @@ The fields that would have made the document usable for the CFO conversation wer
 Without the before number, there is no story. 
 Without control, the after number is an assertion.
 
-## Glossary
-
-Decision log - A record of each architectural choice that captures not just the decision but the alternatives rejected and the tradeoff each resolved, so a successor does not reverse a load-bearing choice for an understandable wrong reason.
-
-Reversal cost - What it costs to undo a decision after the system has been built around it
