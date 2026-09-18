@@ -5,27 +5,49 @@ CSP - Cloud Service Provider
 Live state - Data that changes during the lifetime of a conversation or process
 Monolithic - everything the model might need is loaded into context up front, in one block. 
 Progressive - an approach where context, instructions, or capabilities are loaded in stages as the work requires them, rather than all at once at the start. 
-Tool use - The model decides when to invoke a tool, what arguments to pass, and how to use the result in its next step. 
 
 
 ## Architecturing basics
-Decomposition is where you assign each part of the request to Claude, to an existing system, or to a human, using the four properties of generative AI as the lens. Getting this wrong by over-assigning to Claude is the most common and most expensive early mistake.
-Pattern selection is where you decide whether the work is an augmented call, a workflow, or an agent. Each choice provides and costs you something, naming the costs is the objective.
-Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied. The failure to watch for is retrieval quietly doing a job that the live transactional state should own.
+Decomposition of the request: 
+* assign to Claude, 
+* assign to an existing system, 
+* assign to a human.
+Getting this wrong by over-assigning to Claude is the most common and most expensive early mistake.
+
+Pattern selection:
+* is work is an augmented call, 
+* is work is a workflow, or 
+* is work isan agent. 
+Each choice provides and costs you something, naming the costs is the objective.
+
+When you're architecting a solution, you're making these decisions: 
+1. what the ask is, 
+2. which systems you have available to address it, 
+3. where human judgment needs to be involved, 
+4. determine where Claude can help.
+
+The architectural decision depends on five factors: 
+* predictability (how predictable the task is), 
+* error cost (how expensive a wrong answer would be), 
+* observability (how visible the work is while it runs), 
+* latency (how long you can wait),
+* cost (how much you can spend per run). 
+
+The tightest constraint is the factor that decides.
+For example, if the error cost is the binding constraint, error cost picks the pattern.
+
+Core design decisions:
+* the platform entry point, 
+* workflow pattern,
+* how the work is split across Claude and existing systems, 
+* the model and context strategy,
+* the human-in-the-loop posture.
+
 Model, context, and entry point are where you choose a model tier, a context strategy, and a delivery route, and where evaluations become a stage-gate before any model swap. Check if governance and regulated-industry constraints rule-out a route before considering any cost or latency tradeoffs.
-
-When you're architecting a solution for a partner, you're already making three kinds of decisions: what the ask is, which systems you have available to address it, and where human judgment needs to be involved. This module adds a fourth decision: determining where Claude can help.
-
-The decision depends on five factors: predictability (how predictable the task is), error cost (how expensive a wrong answer would be), observability (how visible the work is while it runs), latency (how long you can wait), and cost (how much you can spend per run). When error cost is the binding constraint, error cost picks the pattern. The tightest constraint is the factor that decides.
 
 The five reference architectures: Agent, RAG, Document processing pipeline (Evaluator-optimizer), Routing, and Coding agent are documented because other teams have already learned what breaks in each one. Combine them when different parts of your system break differently and pick one when you are still uncertain what the system will need to handle. The most common mistake is to use retrieval as a substitute for live state. Retrieval is built for static documents and stale snapshots, so don't use them during a conversation that needs live data.
 
-### Core design decisions
-the platform entry point, 
-workflow pattern,
-the how the work is split across Claude and existing systems, 
-the model and context strategy,
-the human-in-the-loop posture.
+Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied. The failure to watch for is retrieval quietly doing a job that the live transactional state should own.
 
 ## Claude properties
 
@@ -63,7 +85,21 @@ Mitigation: Use system prompts, structured outputs, and code execution for anyth
 
 ## How a user reaches Claude
 
-The build-time interfaces all describe how code reaches Claude, the entry points describe who reaches Claude, and the route describes where the request runs.
+The build-time interfaces all describe how code reaches Claude, 
+the entry points describe who reaches Claude, and 
+the route describes where the request runs.
+
+### Entry point
+What a person or system directly interacts with. Entry Points are the wrappers that decide who can talk to Claude and how.
+Examples: Claude.ai (web, mobile, desktop), Claude Code, a custom application built on the API.
+
+### Built-time interfaces
+How an engineer programs against Claude, the layer the partner's code is written to.
+Examples: The direct API, the SDKs, MCP, the Agent SDK.
+
+### Delivery routes
+Where API traffic terminates. Delivery routes determine whose infrastructure the request runs on.
+Examples: Anthropic directly, AWS Bedrock, GCP Vertex AI, Microsoft Foundry.
 
 A proposal for a retail banking workflow solution put Claude Code, an engineering entry point, in front of a non-engineering audience because, in the author's words, "it's all Claude." It is all Claude, in the sense that the same model sits underneath every entry point. But the entry point is the wrapper, and Claude Code was built for developers running a terminal, not for bank branch staff following a workflow. Treating the three layers as one erased the distinction that should have ruled the choice out immediately.
 
@@ -72,21 +108,6 @@ Cost: Every entry point carries its own integration cost. Picking the wrong laye
 Complexity: When the three layers are named and discussed precisely, a design review can isolate exactly which decision is contested. When they are blurred, the review argues in circles.
 
 Risk: An entry point chosen before the user is named is a common and avoidable architecture error that is often traceable to collapsing these three distinct layers into one concept.
-
-### Entry point
-What a person or system directly interacts with. Entry Points are the wrappers that decide who can talk to Claude and how.
-
-Examples: Claude.ai (web, mobile, desktop), Claude Code, a custom application built on the API.
-
-### Built-time interfaces
-How an engineer programs against Claude, the layer the partner's code is written to.
-
-Examples: The direct API, the SDKs, MCP, the Agent SDK.
-
-### Delivery routes
-Where API traffic terminates. Delivery routes determine whose infrastructure the request runs on.
-
-Examples: Anthropic directly, AWS Bedrock, GCP Vertex AI, Microsoft Foundry.
 
 
 ## Seven primitives
@@ -105,9 +126,6 @@ Complexity: Each primitive added to a design is a part to build, observe, and go
 
 Risk: Without a shared vocabulary, teams cannot effectively communicate because they do not agree on what the parts are.
 
-## Decomposition
-
-For each step, select the right owner: what Claude does, what existing systems do, or what humans do.
 
 ## Deterministic drift
 
