@@ -8,17 +8,6 @@ Progressive - an approach where context, instructions, or capabilities are loade
 
 
 ## Architecturing basics
-Decomposition of the request: 
-* assign to Claude, 
-* assign to an existing system, 
-* assign to a human.
-Getting this wrong by over-assigning to Claude is the most common and most expensive early mistake.
-
-Pattern selection:
-* is work is an augmented call, 
-* is work is a workflow, or 
-* is work isan agent. 
-Each choice provides and costs you something, naming the costs is the objective.
 
 When you're architecting a solution, you're making these decisions: 
 1. what the ask is, 
@@ -33,7 +22,7 @@ The architectural decision depends on five factors:
 * latency (how long you can wait),
 * cost (how much you can spend per run). 
 
-The tightest constraint is the factor that decides.
+The tightest constraint is the factor that drives the architecture.
 For example, if the error cost is the binding constraint, error cost picks the pattern.
 
 Core design decisions:
@@ -43,13 +32,65 @@ Core design decisions:
 * the model and context strategy,
 * the human-in-the-loop posture.
 
+Task assignment: 
+* assign to Claude, 
+* assign to an existing system, 
+* assign to a human.
+Getting this wrong by over-assigning to Claude is the most common and most expensive early mistake.
+
+Pattern selection:
+* is work is an augmented call, 
+* is work is a workflow, or 
+* is work is an agent. 
+Each one takes a different position on two axes: predictability (how predictable the path through the work is) and model autonomy (how much autonomy you're willing to hand to the model).
+Each choice costs you something, naming that costs is the objective.
+
+## Entry points
+
+* Claude.ai (web, mobile, and desktop apps) - This is the entry point for applied AI users, not builders. The consumer tiers fit individuals and small teams and Claude for Work fits organizations that need governance and identity controls on the same product.
+* Claude Code (terminal, IDE plugin, desktop, web) - For engineers doing real development work.
+* Claude Cowork - A desktop agent for non-developers that works with local files and applications, automating file and task management on the user's machine under configurable permissions.
+* Claude in Chrome - A browsing agent that operates inside the Chrome browser, navigating pages and taking actions on behalf of the user.
+* Claude for Excel - A spreadsheet agent that operates inside Excel, working directly with cells, formulas, and structured data.
+
+Multi entry points - a deployment that spans more than one entry point exposes a class of problems a single-entry-point system does not.
+Which entry-point owns which task, and why.
+
+An entry-point chosen for one task gradually taking on another because the routing logic was never documented.
+
+Multi-platform routing multiplies integration points, each with its own auth, logging, and failure profile. The entry-point-responsibility map is the only thing that keeps them understandable over time.
+
+## Built-time interfaces
+
+* Direct API - For teams building Claude directly into their own product. Use this when an SDK has not exposed a feature you need.
+* SDKs - SDKs offer the same capability as the API, wrapped in language-native types and helpers that cut down on boilerplate. 
+* MCP - For teams that need the same tools reachable from multiple Claude clients. If only one client will ever use it, MCP adds overhead without much payback.
+* Agent SDK - Running a managed agent loop, the same loop that powers Claude Code, from the partner's own application code. The Agent SDK handles iteration and termination.
+
+### Augmented LLM
+A single model invocation: you send the request, the model completes the task, and your code handles the wiring around it. You can add tool use, retrieval, or extended thinking to that call, but the model is still doing one bounded job in one pass. The control flow never branches based on what the model decides. Use this when the task is well-defined, the output is something you can verify, and there's no reason to split the work across multiple steps.
+
+### Workflow
+You decompose the task into named steps and orchestrate them in your own code. Each step may or may not call Claude. Because the control flow lives in your code rather than inside the model, you can log it, test it, and reason about its behavior the same way you would any other piece of software. Use this when error cost is real, observability matters, and the steps can be determined in advance.
+
+### Agent
+You give Claude a goal and a set of tools and the model determines its own sequence of steps to reach that goal. The control flow lives inside the model, not in your code. Use this only when the path through the work cannot be enumerated in advance, and only when the cost of an unexpected or inconsistent output is acceptable and recoverable. 
+In production, agents are typically bound by constrained tool entry points, per-turn budgets, explicit permissions, and stopping criteria. These constraints are not options; they keep an agent from becoming a liability. An agent that can act autonomously is the right choice only when the stakes and reversibility of its actions justify the autonomy it is given.
+
+Reference architectures: 
+* Agent, 
+* RAG, 
+* Document processing pipeline (Evaluator-optimizer), 
+* Routing,
+* Coding agent.
+Combine them when different parts of your system break differently and pick one when you are still uncertain what the system will need to handle.
+Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied. 
+The most common mistake is to use retrieval as a substitute for live state. Retrieval is built for static documents and stale snapshots, so don't use them during a conversation that needs live data.
+
 Model, context, and entry point are where you choose a model tier, a context strategy, and a delivery route, and where evaluations become a stage-gate before any model swap. Check if governance and regulated-industry constraints rule-out a route before considering any cost or latency tradeoffs.
 
-The five reference architectures: Agent, RAG, Document processing pipeline (Evaluator-optimizer), Routing, and Coding agent are documented because other teams have already learned what breaks in each one. Combine them when different parts of your system break differently and pick one when you are still uncertain what the system will need to handle. The most common mistake is to use retrieval as a substitute for live state. Retrieval is built for static documents and stale snapshots, so don't use them during a conversation that needs live data.
-
-Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied. The failure to watch for is retrieval quietly doing a job that the live transactional state should own.
-
 ## Claude properties
+Next-token prediction, Knowledge, Working memory, Steerability
 
 ### Next-token prediction
 Capability: Tasks built on common patterns: summarizing, reformatting, and explaining well-established concepts.
@@ -58,7 +99,7 @@ Limitation: Anything requiring precision on specifics. Claude can produce text t
 
 Mitigation: Use citations, uncertainty signaling, and generator-verifier loops. Route specific factual lookups through tool calls or authoritative sources rather than relying solely on the model's output.
 
-### KNowledge
+### Knowledge
 
 Capability: Topics in the model's training data that are common, recent, and consistently included where the model can answer reliably from what it learned.
 
@@ -131,20 +172,6 @@ Risk: Without a shared vocabulary, teams cannot effectively communicate because 
 
 A rule that needs to be right every time was handed to a system that is right most of the time. That tradeoff is easy to miss during scoping because the model handles the clean cases correctly, and clean cases are what you see in demos and early testing. The cost of "most of the time" doesn't reveal itself until you audit and by then the partner is calling.
 
-## Patterns
-
-There are three patterns to choose from: an augmented LLM, a workflow, and an agent. 
-Each one takes a different position on two axes: predictability (how predictable the path through the work is) and model autonomy (how much autonomy you're willing to hand to the model).
-
-### Augmented LLM
-A single model invocation: you send the request, the model completes the task, and your code handles the wiring around it. You can add tool use, retrieval, or extended thinking to that call, but the model is still doing one bounded job in one pass. The control flow never branches based on what the model decides. Use this when the task is well-defined, the output is something you can verify, and there's no reason to split the work across multiple steps.
-
-### Workflow
-You decompose the task into named steps and orchestrate them in your own code. Each step may or may not call Claude. Because the control flow lives in your code rather than inside the model, you can log it, test it, and reason about its behavior the same way you would any other piece of software. Use this when error cost is real, observability matters, and the steps can be determined in advance.
-
-### Agent
-You give Claude a goal and a set of tools and the model determines its own sequence of steps to reach that goal. The control flow lives inside the model, not in your code. That's what makes it an agent rather than a workflow: the path through the work is not written in advance anywhere you can inspect. Use this only when the path through the work cannot be enumerated in advance, and only when the cost of an unexpected or inconsistent output is acceptable and recoverable. In production, agents are typically bound by constrained tool entry points, per-turn budgets, explicit permissions, and stopping criteria. These constraints are not options; they keep an agent from becoming a liability. An agent that can act autonomously is the right choice only when the stakes and reversibility of its actions justify the autonomy it is given.
-
 
 ## Skills
 Alongside choosing a pattern, decide how the capability is packaged. 
@@ -162,7 +189,7 @@ Don't optimize for hypothetical future flexibility when today's task can be solv
 
 Teams often pick agents because a task feels open-ended, but if the execution paths are known or can be enumerated, a deterministic workflow (for example, a router with fixed chains) is simpler, more reliable, and easier to maintain.
 Using an agent for predictable work makes it harder to explain, audit, and validate decisions. When auditors ask which step made a decision, pointing to a model interaction is far less effective than pointing to a defined workflow step.
-The agent-specific mistake was introducing non-deterministic control flow where deterministic workflows would have met the requirements.
+Introducing non-deterministic control flow where deterministic workflows would have met the requirements is a typical mistake.
 
 ## Multi-agent systems
 
@@ -223,6 +250,7 @@ Not a better chunker, a shorter refresh interval, or a higher similarity thresho
 ## Model selection
 
 The model eval set is not just a release gate, it's the only thing that makes the model decision defensible during the design conversation.
+
 What to evaluate:
 * Model tiers: Opus / Sonnet / Haiku.
 * Context strategy: monolithic (Send all available context in one request) / progressive (Provide information incrementally)
@@ -259,9 +287,9 @@ The fix is to make the implicit explicit.
 |Chain-of-thought	|Prompt the model to reason step by step before answering.	|Multi-step reasoning, arithmetic-like logic, or tasks where the path matters to the answer.|
 
 The key split: 
+* instruction-only (zero-shot) when the task is clear and bounded.
 * show don't tell (few-shot) when format is hard to specify; 
 * step-by-step (chain-of-thought) when the answer depends on a reasoning path; 
-* instruction-only (zero-shot) when the task is clear and bounded.
 
 The same prompt does not behave identically across models. The prompt-model pairing is what you are actually shipping.
 
@@ -271,32 +299,9 @@ Promt cache matches on a stable prefix, putting dynamic content first meant the 
 
 Writing to the cache has its own cost. If a prompt is called infrequently or its fixed portion is small, caching can cost more than it saves. 
 Caching is a design decision, not a default to switch on everywhere.
+
 A prompt called constantly benefits from a longer-lived cache; one called rarely may never amortize the write.
 The economics depend on call frequency and prefix size
-
-## Claude entry points
-
-* Claude.ai (web, mobile, and desktop apps) - This is the entry point for applied AI users, not builders. The consumer tiers fit individuals and small teams and Claude for Work fits organizations that need governance and identity controls on the same product.
-* Claude Code (terminal, IDE plugin, desktop, web) - For engineers doing real development work.
-* Claude Cowork - A desktop agent for non-developers that works with local files and applications, automating file and task management on the user's machine under configurable permissions.
-* Claude in Chrome - A browsing agent that operates inside the Chrome browser, navigating pages and taking actions on behalf of the user.
-* Claude for Excel - A spreadsheet agent that operates inside Excel, working directly with cells, formulas, and structured data.
-
-## Multi entry points
-
-A deployment that spans more than one entry point exposes a class of problems a single-entry-point system does not.
-Which entry-point owns which task, and why.
-
-An entry-point chosen for one task gradually taking on another because the routing logic was never documented.
-
-Multi-platform routing multiplies integration points, each with its own auth, logging, and failure profile. The entry-point-responsibility map is the only thing that keeps them understandable over time.
-
-## Built-time interfaces
-
-* Direct API - For teams building Claude directly into their own product. Use this when an SDK has not exposed a feature you need.
-* SDKs - SDKs offer the same capability as the API, wrapped in language-native types and helpers that cut down on boilerplate. 
-* MCP - For teams that need the same tools reachable from multiple Claude clients. If only one client will ever use it, MCP adds overhead without much payback.
-* Agent SDK - Running a managed agent loop, the same loop that powers Claude Code, from the partner's own application code. The Agent SDK handles iteration and termination.
 
 ### Delivery routes
 * If the partner already has a long-term AWS contract, Bedrock is usually the easiest path, the AI spend falls under the same agreement they already have, and the identity system their team uses (IAM) works as-is. 
@@ -319,7 +324,14 @@ Scripts that fire on Claude code lifecycle events (e.g. before/after a tool runs
 Hooks govern what must happen before or after an action.
 
 ### Permission boundaries and approval flows	
-Six permission modes control what Claude Code can do without prompting. Default asks before each action. acceptEdits approves file edits and common filesystem commands (mkdir, touch, rm, mv, cp, sed), though other Bash commands still prompt. Plan mode locks the session to read-only until the user approves a plan. Auto mode uses a classifier to approve safe actions and block risky ones; it is a research preview that works on all plans (admin-enabled on Team and Enterprise) and defaults to the Anthropic API as provider. An environment variable enables CSP providers. dontAsk auto-denies anything that would prompt and runs only what your allow rules cover, which makes it the mode for locked-down CI. bypassPermissions skips all checks and is scoped to containers or CI only.
+Six permission modes control what Claude Code can do:
+* Default - asks before each action. 
+* acceptEdits - approves file edits and common filesystem commands (mkdir, touch, rm, mv, cp, sed), though other Bash commands still prompt. 
+* Plan mode - locks the session to read-only until the user approves a plan. 
+* Auto mode - uses a classifier to approve safe actions and block risky ones;
+* dontAsk - auto-denies anything that would prompt and runs only what your allow rules cover, which makes it the mode for locked-down CI. 
+* bypassPermissions - skips all checks and is scoped to containers or CI only.
+
 Any environment where the cost of an unintended action is non-trivial. Permissions govern what the agent is allowed to touch.
 
 ### Sandboxing and restricted execution	
@@ -327,6 +339,7 @@ Containment around the workspace in which Claude Code runs, including filesystem
 
 ### Regulated industry
 Name the governing constraint when you recommend an entry point and let the constraint eliminate options before preferences do.
+
 API or SDK behind the firm's own application, authenticated via SSO, routed through a firm-approved LLM gateway that logs every request.
 Delivery routes match the region geographic boundary of the model.
 Claude for Government (C4G) - authorized government environments run on a model lag.
