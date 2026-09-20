@@ -1,13 +1,16 @@
 ## Glossary
 
 BAA (Business Associate Agreement)
-A contract required under HIPAA between a covered entity (or business associate) and a vendor that handles protected health information on its behalf. 
+A contract required under HIPAA between a business and a vendor that handles protected health information on its behalf. 
 
 DPA (Data Processing Agreement)
 A contract between a data controller and a data processor defining how personal data may be handled on the controller's behalf, including processing scope, security obligations, sub-processor terms, and breach notification.
 
-Generator-verifier loop
+Generator-Verifier loop
 A two-stage pattern in which a model-generated output is checked by a second pass before being used downstream. The verifier may be a deterministic code-based check (schema validation, comparison against an authoritative value) or a second model call scoped to evaluation. Used as a compensating control where the underlying task requires more precision than single-pass generation reliably provides.
+
+Evaluator-Optimizer (Generator-Critic) loop
+Generator creates a candidate output, Evaluator analyzes the candidate output against clear criteria, testing conditions, or quality benchmarks and generates structured feedback, highlighting errors, edge cases, or areas for improvement.
 
 Transient error
 A transient error is a temporary failure that is expected to resolve on its own without any permanent fix, meaning if you try the same request again after a short wait, it will likely succeed.
@@ -15,9 +18,8 @@ A transient error is a temporary failure that is expected to resolve on its own 
 
 ## Evals as acceptance criteria
 
-Evaluations let you test your system's behavior before it goes to production or after model updates, so you discover problems before they occur.
-
-An eval suite belongs at the beginning of your build, defined before production code is written, rather than at the end as a QA step. In fact, if you cannot write an eval for behavior, then you have no reliable way to measure whether that behavior is present. This means that every change you make to the system isn't verifiable. Adding an eval suite at the beginning allows you to verify throughout the entire build.
+An eval suite belongs at the beginning of your build, defined before production code is written, rather than at the end as a QA step. 
+If you cannot write an eval for behavior, then you have no reliable way to measure whether that behavior is present.
 
 A well-constructed eval workflow runs sequentially through the stages below. Each stage produces an artifact that feeds into the next stage:
 1. Define the task - State the behavior you are evaluating in specific, measurable terms.
@@ -35,7 +37,7 @@ Output: Score per item with reasoning.
 5. Interpret and act - Aggregate scores tell you where the system is and whether a change moved it in the right direction. A change that raises the mean score while quietly degrading performance on edge cases or adversarial inputs doesn't make the system better.	
 Output: Overall score, per-category breakdown.
 
-
+Evaluation grading methods: code-based eval, LLM judge, or human review.
 The three types of evals have different speed-versus-flexibility tradeoffs:
 * Code-based evals run deterministic checks in milliseconds and cost almost nothing.
 * Model-based evals use a judge model to assess outputs that require interpretation and cost roughly as much as the model call itself.
@@ -48,14 +50,16 @@ An LLM judge is itself a system that can be wrong. Before you trust its verdicts
 
 Favor volume over perfection. Many automatically gradable cases beat a handful of manually-graded ones: broad, cheap coverage catches more regressions than a small, painstaking set, and it can run on every change.
 
-Multi-turn evals are a separate category that scores the system over a sequence of exchanges rather than on a single prompt and response. A multi-turn eval checks a few criteria: whether the system keeps prior context straight across turns, whether it answers a follow-up prompt without inventing details that were never said earlier in the conversation, and whether output quality holds as the conversation runs longer.
+Multi-turn evals are a separate category that scores the system over a sequence of exchanges rather than on a single prompt and response. A multi-turn eval checks a few criteria: 
+* whether the system keeps prior context straight across turns, 
+* whether it answers a follow-up prompt without inventing details that were never said earlier in the conversation, 
+* whether output quality holds as the conversation runs longer.
 
 An eval suite that does not cover the input distribution it will face in production is measuring a different system than the one you are shipping.
 
-Evaluation grading methods: code-based eval, LLM judge, or human review.
 
 ## Defining success criteria 
-Turning a business requirement into a measurable threshold
+Turn a business requirement into a measurable threshold.
 A business requirement like "summarize claims accurately" does not really tell you what to measure. 
 
 The process of turning it into an eval criterion has the following steps:
@@ -85,14 +89,13 @@ Typical mistakes:
 The cost model was wrong because it was built at the incorrect volume. 
 The token distribution assumption was wrong because it was built on the incorrect inputs. 
 The reliability failure was invisible in development because failure cases were never tested.
-
 A POC answers the question "can the system do this", but it does not answer "what does it cost to do this at scale" or "what happens when a dependency fails."
 
 ## Reliability controls
 
 * When a model returns a transient error, such as a rate limit 429, timeout, or 5xx, the system should retry with progressively longer delays between attempts. This prevents a flood of retries from turning a brief hiccup into a prolonged outage. Set the maximum number of attempts and total wait time based on how much delay your use case can tolerate.
 * If the primary model or endpoint is unavailable, the system should automatically route the request to an alternative such as a different model tier or a cached response. It should not raise an error to the user. Fallback behavior should be tested as part of your eval suite.
-*  circuit breaker measures the error rate on a downstream dependency and trips when errors exceed an established threshold. Once tripped, requests fail immediately rather than waiting for a timeout. This prevents one degraded dependency from taking down the broader system.
+* Circuit breaker measures the error rate on a downstream dependency and trips when errors exceed an established threshold. Once tripped, requests fail immediately rather than waiting for a timeout. This prevents one degraded dependency from taking down the broader system.
 
 Reliability controls must sit at the right stage to be effective: new attempts belong close to the API call, circuit breakers at the service boundary, and fallback chains in the orchestration layer. Placing them in the wrong layer means protecting the wrong part of the system and leaving the right part exposed.
 
@@ -100,21 +103,26 @@ Model version pinning applies to any architecture. It is an operational discipli
 
 ## Failure modes by architecture type
 
-* Agent	Unbounded tool use and growing context. An agent that can call tools without budget constraints or turn limits will run up cost and latency in ways that are invisible until a single request exceeds the budget ceiling. Eval the agent's stopping behavior, not just its output quality.
-* RAG (retrieval-augmented generation)	Retrieval quality drift. The retrieval layer degrades when documents are added or removed from the index without reindexing, when the query and the document representation fall out of alignment, or when the index is refreshed on a schedule that creates staleness for live-state queries. eparate live-state queries from static knowledge queries.
-* Document processing pipeline (Evaluator-optimizer)	No exception path for low-confidence extractions. A pipeline that routes all documents through the same flow regardless of extraction confidence will produce wrong outputs on edge cases at the same rate it produces correct outputs on clean documents. Route low-confidence extractions to a human review queue rather than downstream processing. 
-* Orchestrator-workers	Failure boundaries between orchestrators and subagents blur, traces fragment, and a dropped subagent can fail silently at synthesis. Define recoverable (subagent: retry or flag) versus unrecoverable (orchestrator) boundaries. Create a shared trace ID across all agents.
+* Agent	Unbounded tool use and growing contex - An agent that can call tools without budget constraints or turn limits will run up cost and latency in ways that are invisible until a single request exceeds the budget ceiling. Eval the agent's stopping behavior, not just its output quality.
+* RAG retrieval quality drift - The retrieval layer degrades when documents are added or removed from the index without reindexing, when the query and the document representation fall out of alignment, or when the index is refreshed on a schedule that creates staleness for live-state queries. Separate live-state queries from static knowledge queries.
+* No exception path for low-confidence extractions - A pipeline that routes all documents through the same flow regardless of extraction confidence will produce wrong outputs on edge cases at the same rate it produces correct outputs on clean documents. Route low-confidence extractions to a human review queue rather than downstream processing. 
+* Orchestrator-workers boudaries - failure boundaries between orchestrators and subagents blur, traces fragment, and a dropped subagent can fail silently at synthesis. Define recoverable (subagent: retry or flag) versus unrecoverable (orchestrator) boundaries. Create a shared trace ID across all agents.
 
 ## Sizing
 
 Output quality is validated through evals, and system reliability is validated through architecture controls like retries, fallbacks, and circuit breakers. Meeting both bars is what production readiness means.
-Sizing tells you whether a specific business problem can meet that bar, and what constraints govern the design. Feasibility fits into one of three states: feasible as scoped, feasible with constraints, and not feasible. Identifying the state correctly is what makes a scoping document useful.
+Sizing tells you whether a specific business problem can meet that bar, and what constraints govern the design. 
+Feasibility fits into one of three states: 
+* feasible as scoped, 
+* feasible with constraints,
+* not feasible. 
+Identifying the state correctly is what makes a scoping document useful.
 
 Four inputs drive the model: call volume, token budget per request, model tier, and sensitivity parameters.
 
 * Step 1: Estimate call volume. How many requests are made per day or per month?
 * Step 2: Set the token budget per request. The token budget has two components: input tokens (system prompt, retrieved context, and user message) and output tokens (expected response length). Model the distribution rather than just the average. If document lengths vary widely, the cost model should account for the typical cases as well as the extremes. If the system prompt is long and stable, prompt caching can meaningfully reduce input costs.
-* Step 3: Project the monthly cost. Multiply call volume by the input token count at the input token rate. Separately, multiply the output token count at the output token rate. Then, add both figures.  If the projection exceeds the ceiling, the architecture needs to change before a line of code is written. 
+* Step 3: Project the monthly cost. Multiply call volume by the input token count at the input token rate. Separately, multiply the output token count at the output token rate. Then, add both figures. If the projection exceeds the ceiling, the architecture needs to change before a line of code is written. 
 * Step 4: Run sensitivity analysis. What happens to cost if call volume doubles? What if the token distribution shifts toward the tail? 
 
 Caching requires explicit cache_control markers in the request. Cache writes incur a higher per-token cost than standard input, so the cost model must account for the write cost on first use. The default cache TTL is 5 minutes; workloads with request frequency lower than TTL will not realize consistent caching savings.
@@ -128,12 +136,11 @@ Caching requires explicit cache_control markers in the request. Cache writes inc
 
 A statement of work - is a formal document that defines all project requirements, deliverables, timelines, and pricing for a service agreement between a client and a contractor.
 
-"technically feasible" is meaningless if the constraints aren't applied to the expected scale.
-capability question is answered before the constraint questions are asked.
-
-The volume, latency, and input-size constraints are inputs to the feasibility verdict. The verdict is only as sound as the constraints gathered before it.
-
 ## Technical feasibility assessment
+
+"technically feasible" is meaningless if the constraints aren't applied.
+The volume, latency, and input-size constraints are inputs to the feasibility verdict.
+
 Describes an idea that can be done successfully with available means
 
                    [ Working Memory Axis ]
@@ -233,27 +240,29 @@ A multi-tenant system running on a shared API key has no way to attribute a rate
 If the field is not required for the language task Claude is performing, it should not be in the context window.
 
 Adding a PII redaction layer, building a server-side identity injection, and instrumenting the observability stack all add time. They also add no visible capability, as the system works without them. The cost of skipping them does not appear until the first audit.
-
-The fix was a data architecture change: a server-side redaction step that strips non-essential PII fields before the Claude call, and a retrieval function that supplies only the fields the language task needs.
+The fix would need a data architecture change: a server-side redaction step that strips non-essential PII fields before the Claude call, and a retrieval function that supplies only the fields the language task needs.
 
 ## A/B testing
 
 Observability answers the monitoring question. Structured A/B testing answers the improvement question. Without both, you are either flying blind or making changes you cannot measure.
 
 An A/B test for a Claude system follows the same structure as any experiment: 
-a hypothesis (must be specific and testable),
-a treatment group, 
-a control group, 
-a metric,
-a sample size large enough to make the result statistically meaningful. 
+* a hypothesis (must be specific and testable),
+* a treatment group, 
+* a control group, 
+* a metric,
+* a sample size large enough to make the result statistically meaningful. 
 
 The difference from traditional software A/B testing is that LLM outputs are probabilistic, which makes the results noisier and the interaction effects harder to control.
 For LLM systems, the variance in outputs is higher than for deterministic systems, which means the required sample size is larger.
 A primary metric is a single metric defined before the experiment runs. 
 
-Random assignment of requests to treatment (new version) or control (current version). Assignment must be consistent for a given user or session to avoid contamination. Non-random assignment means the groups are not comparable. If the treatment group happens to receive more complex queries, an apparent win may be an artifact of input distribution.
+Random assignment of requests to treatment group (new version) or control group (current version). 
+Assignment must be consistent for a given user or session to avoid contamination. Non-random assignment means the groups are not comparable. If the treatment group happens to receive more complex queries, an apparent win may be an artifact of input distribution.
 
-The two questions to ask before declaring a winner are: is the effect large enough to justify the operational overhead of maintaining the new version? And did any secondary metric degrade?
+The two questions to ask before declaring a winner are: 
+* is the effect large enough to justify the operational overhead of maintaining the new version? 
+* And did any secondary metric degrade?
 A prompt change that improves performance on typical inputs may degrade performance on edge-case inputs that appear rarely in the test period but frequently in a future seasonal spike.
 
 There is a way to test against real traffic without exposing - you run the new version in parallel with the current one, send it a copy of live requests, and serve every user the current version's response. The new version's outputs are logged rather than returned, and you score them offline after the fact.
@@ -292,17 +301,35 @@ Discernment - means moving from passive consumption of AI outputs to critical ev
 
 Connecting observability data to business value - The observability stack needs a translation layer that connects the technical metrics to the business metrics they drive.
 
-## Efect impact and effect confidence
-Changes has two axes: the expected effect size (how large a difference you expect to see) and the confidence requirement (how certain you need to be before acting on the result). Confidence requirement is driven by the consequence of a wrong call and how reversible it is.
+## Change evaluation (Effect impact vs effect confidence)
 
-A: Small effect · Low confidence. The effect of a wording change on a clarification message is unlikely to be large. The cost of being wrong is low. A small, fast comparison is appropriate.
+A pragmatic decision matrix for testing and deploying changes to AI systems.
+Expected Effect Size: How much you expect the metric to move (latency, accuracy, cost, output quality).
+Confidence Requirement: How certain you must be before shipping. This is driven by risk, reversibility, and blast radius.
 
-B: Small or unknown effect · High confidence. In a high-consequence deployment, a small sample that happens to look positive is not sufficient. The confidence requirement is driven by the consequence of a wrong call, not the expected effect size.
+Changes has two axes: 
+* the expected effect size (how large a difference you expect to see) and 
+* the confidence requirement (how certain you need to be before acting on the result). 
+Confidence requirement is driven by the consequence of a wrong call and how reversible it is.
 
-C: Large effect · High confidence. A 30% routing shift has a large effect that affects a substantial fraction of requests. High confidence is required before deploying a change of this magnitude.
+A: Small effect · Low confidence. 
+Example: The effect of a wording change on a clarification message is unlikely to be large. 
+The cost of being wrong is low. A small, fast comparison is appropriate.
 
-D: Large effect on cost · Moderate confidence. The cost effect of a model tier change is expected to be large and is easy to measure. Quality degradation is the risk to monitor, but the cost signal is strong enough to reduce the confidence requirement for the cost component.
+B: Small or unknown effect · High confidence. 
+Example: In a high-consequence deployment, a small sample that happens to look positive is not sufficient. 
+The confidence requirement is driven by the consequence of a wrong call, not the expected effect size.
 
-E: Small effect · Moderate confidence. Retrieval prompt changes tend to have subtle, distributed effects on output quality. At 200 requests per day, reaching significance on a small effect takes longer, which raises the effective confidence requirement.
+C: Large effect · High confidence.
+Example: A 30% routing shift has a large effect that affects a substantial fraction of requests. 
+High confidence is required before deploying a change of this magnitude.
+
+D: Large effect · Moderate confidence. 
+Example: The cost effect of a model tier change is expected to be large and is easy to measure. 
+Quality degradation is the risk to monitor, but the cost signal is strong enough to reduce the confidence requirement for the cost component.
+
+E: Small effect · Moderate confidence. 
+Example: Retrieval prompt changes tend to have subtle, distributed effects on output quality. 
+At 200 requests per day, reaching significance on a small effect takes longer, which raises the effective confidence requirement.
 
 
