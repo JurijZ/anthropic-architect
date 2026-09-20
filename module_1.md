@@ -1,5 +1,5 @@
 ## Glossary
-Authoritative - means the source you have agreed to treat as correct
+Authoritative source - means the source you have agreed to treat as correct
 Adaptive thinking - Extended thinking where the model itself, rather than you, decides whether to think and how much, based on the complexity of each request.
 CSP - Cloud Service Provider 
 Live state - Data that changes during the lifetime of a conversation or process
@@ -10,7 +10,7 @@ Progressive - an approach where context, instructions, or capabilities are loade
 ## Architecturing basics
 
 When you're architecting a solution, you're making these decisions: 
-1. what the ask is, 
+1. identify what the ask is, 
 2. which systems you have available to address it, 
 3. where human judgment needs to be involved, 
 4. determine where Claude can help.
@@ -47,6 +47,7 @@ Each choice costs you something, naming that costs is the objective.
 
 ## Entry points
 
+Anthropic designs different products to act as the primary "way in" for different audiences to access Claude:
 * Claude.ai (web, mobile, and desktop apps) - This is the entry point for applied AI users, not builders. The consumer tiers fit individuals and small teams and Claude for Work fits organizations that need governance and identity controls on the same product.
 * Claude Code (terminal, IDE plugin, desktop, web) - For engineers doing real development work.
 * Claude Cowork - A desktop agent for non-developers that works with local files and applications, automating file and task management on the user's machine under configurable permissions.
@@ -54,7 +55,7 @@ Each choice costs you something, naming that costs is the objective.
 * Claude for Excel - A spreadsheet agent that operates inside Excel, working directly with cells, formulas, and structured data.
 
 Multi entry points - a deployment that spans more than one entry point exposes a class of problems a single-entry-point system does not.
-Which entry-point owns which task, and why.
+Which entry-point owns which task, and why?
 
 An entry-point chosen for one task gradually taking on another because the routing logic was never documented.
 
@@ -77,23 +78,28 @@ You decompose the task into named steps and orchestrate them in your own code. E
 You give Claude a goal and a set of tools and the model determines its own sequence of steps to reach that goal. The control flow lives inside the model, not in your code. Use this only when the path through the work cannot be enumerated in advance, and only when the cost of an unexpected or inconsistent output is acceptable and recoverable. 
 In production, agents are typically bound by constrained tool entry points, per-turn budgets, explicit permissions, and stopping criteria. These constraints are not options; they keep an agent from becoming a liability. An agent that can act autonomously is the right choice only when the stakes and reversibility of its actions justify the autonomy it is given.
 
-Reference architectures: 
+## Reference architectures
+
+Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied.
+Popular blueprints:
 * Agent, 
 * RAG, 
 * Document processing pipeline (Evaluator-optimizer), 
 * Routing,
 * Coding agent.
 Combine them when different parts of your system break differently and pick one when you are still uncertain what the system will need to handle.
-Reference architectures are where a known, good blueprint either fits the problem shape or is misapplied. 
+ 
 The most common mistake is to use retrieval as a substitute for live state. Retrieval is built for static documents and stale snapshots, so don't use them during a conversation that needs live data.
 
-Model, context, and entry point are where you choose a model tier, a context strategy, and a delivery route, and where evaluations become a stage-gate before any model swap. Check if governance and regulated-industry constraints rule-out a route before considering any cost or latency tradeoffs.
+Model, context, and entry point are where you choose a model tier, a context strategy, and a delivery route.
+Check if governance and regulated-industry constraints rule-out a route before considering any cost or latency tradeoffs.
+
 
 ## Claude properties
 Next-token prediction, Knowledge, Working memory, Steerability
 
 ### Next-token prediction
-Capability: Tasks built on common patterns: summarizing, reformatting, and explaining well-established concepts.
+Tasks built on common patterns: summarizing, reformatting, and explaining well-established concepts.
 
 Limitation: Anything requiring precision on specifics. Claude can produce text that appears accurate but isn't. This risk concentrates around names, dates, citations, and statistics.
 
@@ -101,7 +107,7 @@ Mitigation: Use citations, uncertainty signaling, and generator-verifier loops. 
 
 ### Knowledge
 
-Capability: Topics in the model's training data that are common, recent, and consistently included where the model can answer reliably from what it learned.
+Topics in the model's training data that are common, recent, and consistently included where the model can answer reliably from what it learned.
 
 Limitation: Topics that are rare, niche, contested, or frequently changing. The model may present stale or incomplete information with the same confident tone it uses for established facts.
 
@@ -109,7 +115,7 @@ Mitigation: Use web search, retrieval (RAG), tool use, or MCP servers to make an
 
 ### Working memory
 
-Capability: Anything that fits in the active context window.
+Anything that fits in the active context window.
 
 Limitation: The context window is a hard edge: once content falls outside the window, the model has no access to it at all. Two different errors happen at the edge, but they can be easy to conflate. One is an oversized request, meaning a prompt or conversation that is already too large to send. When an oversized request is sent it is rejected before generation. If the request exceeds the model's token limit, the API returns a 400 invalid_request_error with a message indicating the prompt is too long. If the raw request body exceeds the API's byte limit, the API returns a 413 request_too_large error with a message indicating the request exceeds the maximum allowed number of bytes. The other error occurs when a prompt fits, but its generation runs into the window ceiling and stops early instead; on current models the response comes back with a model_context_window_exceeded stop reason and truncated output. To avoid hitting the limit, you can check the usage field on every response and the token-counting API before you hit send.
 
@@ -117,7 +123,7 @@ Mitigation: Use progressive context loading, chunking, and front-loading of crit
 
 ### Steerability
 
-Capability: Short, concrete, and verifiable instructions with defined formats, explicit length limits, clear roles.
+Short, concrete, and verifiable instructions with defined formats, explicit length limits, clear roles.
 
 Limitation: Abstract or ambiguous instructions, long reasoning chains, and tasks requiring precise numerical or logical computation. For high-stakes numerical accuracy, deterministic computation or tool execution should own the answer. The model may follow the letter of an instruction while drifting from the intent.
 
@@ -126,8 +132,8 @@ Mitigation: Use system prompts, structured outputs, and code execution for anyth
 
 ## How a user reaches Claude
 
-The build-time interfaces all describe how code reaches Claude, 
-the entry points describe who reaches Claude, and 
+The entry points describe who reaches Claude,
+the build-time interfaces all describe how code reaches Claude, 
 the route describes where the request runs.
 
 ### Entry point
@@ -142,6 +148,7 @@ Examples: The direct API, the SDKs, MCP, the Agent SDK.
 Where API traffic terminates. Delivery routes determine whose infrastructure the request runs on.
 Examples: Anthropic directly, AWS Bedrock, GCP Vertex AI, Microsoft Foundry.
 
+Case:
 A proposal for a retail banking workflow solution put Claude Code, an engineering entry point, in front of a non-engineering audience because, in the author's words, "it's all Claude." It is all Claude, in the sense that the same model sits underneath every entry point. But the entry point is the wrapper, and Claude Code was built for developers running a terminal, not for bank branch staff following a workflow. Treating the three layers as one erased the distinction that should have ruled the choice out immediately.
 
 Cost: Every entry point carries its own integration cost. Picking the wrong layer because the vocabulary was unclear can lead to paying for the wrong solution, then paying again to replace it.
@@ -161,11 +168,10 @@ skills - A versioned, reusable unit (instructions plus optional scripts) that pa
 agent teams - Multiple agents working as coordinated peers, each owning part of a larger goal.
 dynamic workflows - Assemble the steps of a workflow at runtime rather than fixing them in advance.
 
-Cost: Reaching for a heavier primitive than the job requires is paid for in latency, tokens, and operational surface area, every request. E.g., Using a team of agents when a single tool call would suffice.
+Cost: Reaching for a heavier primitive than the job requires is paid for in latency, tokens, and operational surface area, every request. 
+E.g., Using a team of agents when a single tool call would suffice.
 
 Complexity: Each primitive added to a design is a part to build, observe, and govern. The discipline is to use the fewest primitives necessary to meet the requirement.
-
-Risk: Without a shared vocabulary, teams cannot effectively communicate because they do not agree on what the parts are.
 
 
 ## Deterministic drift
@@ -177,12 +183,12 @@ A rule that needs to be right every time was handed to a system that is right mo
 Alongside choosing a pattern, decide how the capability is packaged. 
 Three options sit on a spectrum: 
 1. a prompt-only solution (instructions alone), 
-2. direct tool use (the model calls functions in your code), and a 
-3. Skills-based architecture (a versioned, reusable Skill that packages the procedure, its instructions, and any scripts as one governed unit). 
+2. a direct tool use (the model calls functions in your code),
+3. a skills-based architecture (a versioned, reusable Skill that packages the procedure, its instructions, and any scripts as one unit). 
 
 Reach for a Skill when the same procedure runs repeatedly, needs to be distributed across teams or products, or must be versioned and governed.
 
-## Flexibility vs Non-Determinism
+## Flexibility vs Determinism
 
 Every increase in flexibility comes at the cost of reduced determinism. Only pay that cost when the task genuinely requires it.
 Don't optimize for hypothetical future flexibility when today's task can be solved with a deterministic workflow.
@@ -193,7 +199,7 @@ Introducing non-deterministic control flow where deterministic workflows would h
 
 ## Multi-agent systems
 
-Some problems are too large or too varied for a single agent to hold in one context. When that happens, the design moves to multiple agents working together: an orchestrator that decomposes the work and subagents that each carry part of it. 
+Some problems are too large or too varied for a single agent to hold in one context. When that happens, the design moves to multiple agents working together. 
 
 The orchestrator - owns the goal: it decomposes the work, decides what to delegate, and synthesizes the results into a single answer. The orchestrator never does the sub-task work itself; its job is delegation and synthesis.
 
@@ -219,33 +225,42 @@ Design for this asymmetry, make subagent work idempotent and retryable, and prot
 | The orchestrator loses the goal or its synthesis state | 	Orchestrator (often unrecoverable)	 | Protect orchestrator state; checkpoint progress so a failed run can resume rather than restart. | 
 | Traces fragment across orchestrator and subagents	 |  Observability (cross-cutting)	 | Propagate a shared trace identifier so a single run is reconstructable end to end. | 
 
-The dangerous failure is the silent one: a subagent drops a unit and the orchestrator synthesizes a confident, complete-looking answer over incomplete work. Validate coverage, do not assume it.
+The dangerous failure is the silent one: a subagent drops a unit and the orchestrator synthesizes a confident, complete-looking answer over incomplete work. 
+Validate coverage, do not assume it.
 
 ### Human-in-the-loop
 
-A human-in-the-loop checkpoint is a gate that pauses execution for review, positioned by the risk and reversibility of the action about to be taken. Place a gate before any irreversible or high-stakes action a subagent would otherwise take autonomously;
+A human-in-the-loop checkpoint is a gate that pauses execution for review, positioned by the risk and reversibility of the action about to be taken. 
+Place a gate before any irreversible or high-stakes action a subagent would otherwise take autonomously;
 
 ### Verification
 
-Completeness was assumed, not verified. 
+The orchestrator synthesized over the results it happened to receive, with no rule that the number of results must equal the number of units dispatched. A multi-agent system fails most dangerously when the summary looks complete and is not.
+No coverage check at synthesis - completeness was assumed, not verified. 
+Confident synthesis over incomplete work. The output's fluency masked the gap.
+
 Watch for places where a failure or a high-stakes action crosses a boundary unobserved.
-
-No coverage check at synthesis. The orchestrator synthesized over the results it happened to receive, with no rule that the number of results must equal the number of units dispatched.
-
 A recoverable failure was never recovered. A timed-out subagent is the recoverable case, but only if something retries it or flags the gap. Here the failure was silent because nothing was watching the boundary.
 
-Confident synthesis over incomplete work. The output's fluency masked the gap. A multi-agent system fails most dangerously when the summary looks complete and is not.
 
 ## Retrieval vs Tool call
 
-Retrieval is for stable knowledge: things that were true yesterday and will be true tomorrow. Tool use is for live state: things whose current value is owned by a system and changes independently of your index. Conflating them produces answers that are fluent, confident, and wrong in ways that are hard to detect because the system shows no error signal.
+* Retrieval is for stable knowledge: things that were true yesterday and will be true tomorrow. 
+* Tool use is for live state: things whose current value is owned by a system and changes independently of your index. 
+Conflating them produces answers that are fluent, confident, and wrong in ways that are hard to detect because the system shows no error signal.
 
 Retrieval is the right mechanism for knowledge: FAQs, policies, manuals. 
-It's the wrong mechanism for transactional state. Order status wasn't failing because retrieval is broken. It was failing because current state had been represented as historical text snapshots in the first place.
+It's the wrong mechanism for transactional state. 
+
+Order status wasn't failing because retrieval is broken. It was failing because current state had been represented as historical text snapshots in the first place.
 
 Embedding similarity confidently merged two stale snapshots into one answer. A higher similarity score does not mean a truer answer; it means the retrieved text was semantically close to the query, which is not the same thing when the underlying state has changed since the text was written.
 
-Not a better chunker, a shorter refresh interval, or a higher similarity threshold: a tool call to the order-status service. The knowledge base keeps the FAQ content. The transactional database keeps the orders. Two types of data, two access patterns, two mechanisms.
+Not a better chunker, a shorter refresh interval, or a higher similarity threshold: a tool call to the order-status service. 
+
+The knowledge base keeps the FAQ content. 
+The transactional database keeps the orders. 
+Two types of data, two access patterns, two mechanisms.
 
 ## Model selection
 
@@ -261,7 +276,7 @@ Classifier step is using Haiku and confirmed no regression on the eval.
 Mid-pipeline summarization is done by Sonnet.
 Opus is used on the final response-composition step.
 
-Once you have a configuration where everyhting is within budget, ask: which single setting, if relaxed, would breach a budget first?
+Once you have a configuration where everything is within budget, ask: which single setting, if relaxed, would breach a budget first?
 Then identify what constraint is not compatible with this settings, this is your dominant constraint.
 For example if the constraint is latency, then reasoning is the setting to look at.
 
@@ -280,18 +295,18 @@ Underspecification is a gap the model fills with its own assumption, differently
 Where the prompt is silent, the model improvises and improvisation is exactly the non-determinism you do not want in a reused asset. 
 The fix is to make the implicit explicit.
 
-|Technique|What it is|	When it fits|
-|--|---|---|
-|Zero-shot	|Instruction only, no examples.	|Well-specified tasks the model already handles reliably; the default to try first.|
-|Few-shot	|A handful of input/output examples in the prompt.|	Tasks where the desired format or judgment is easier to show than to describe.|
-|Chain-of-thought	|Prompt the model to reason step by step before answering.	|Multi-step reasoning, arithmetic-like logic, or tasks where the path matters to the answer.|
+Technique:
+Zero-shot - Instruction only, no examples. Well-specified tasks the model already handles reliably;
+Few-shot - A handful of input/output examples in the prompt. Tasks where the desired format or judgment is easier to show than to describe.
+Chain-of-thought - Prompt the model to reason step by step before answering. Tasks where the path matters to the answer.
 
 The key split: 
 * instruction-only (zero-shot) when the task is clear and bounded.
 * show don't tell (few-shot) when format is hard to specify; 
 * step-by-step (chain-of-thought) when the answer depends on a reasoning path; 
 
-The same prompt does not behave identically across models. The prompt-model pairing is what you are actually shipping.
+The prompt-model pairing is what you are actually shipping.
+The same prompt does not behave identically across models. 
 
 ## Prompt caching
 
@@ -320,10 +335,12 @@ The Claude model itself is the same regardless of route. Prompting, evaluation s
 ## Governing
 ### Hooks	
 
-Scripts that fire on Claude code lifecycle events (e.g. before/after a tool runs, at session start, on stop), used as deterministic gates the agent cannot skip.
 Hooks govern what must happen before or after an action.
+Scripts that fire on Claude code lifecycle events (e.g. before/after a tool runs, at session start, on stop), used as deterministic gates the agent cannot skip.
 
-### Permission boundaries and approval flows	
+### Permission boundaries and approval flows
+
+Permissions govern what the agent is allowed to touch.
 Six permission modes control what Claude Code can do:
 * Default - asks before each action. 
 * acceptEdits - approves file edits and common filesystem commands (mkdir, touch, rm, mv, cp, sed), though other Bash commands still prompt. 
@@ -331,8 +348,6 @@ Six permission modes control what Claude Code can do:
 * Auto mode - uses a classifier to approve safe actions and block risky ones;
 * dontAsk - auto-denies anything that would prompt and runs only what your allow rules cover, which makes it the mode for locked-down CI. 
 * bypassPermissions - skips all checks and is scoped to containers or CI only.
-
-Any environment where the cost of an unintended action is non-trivial. Permissions govern what the agent is allowed to touch.
 
 ### Sandboxing and restricted execution	
 Containment around the workspace in which Claude Code runs, including filesystem boundaries, network egress rules, and constrained command surfaces.
