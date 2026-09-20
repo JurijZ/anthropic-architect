@@ -1,10 +1,22 @@
 ## Safety stack
 
-Safety is a full set of controls, each covering a different part of the request path, each with a blind spot the next one has to catch. Safety is built around context.
+Safety is built around context.
 
-Claude arrives with broad safety behavior in place, but it does not know the partner's data-handling rules, authorization model, or domain policy. Before you start adding controls, how much safe behavior is already handled by the model, and how much is still yours to build? You need to understand this boundary clearly to avoid creating duplicate protections or assuming the model is enforcing a rule it has never seen.
+Safety is a full set of controls, each covering a different part of the request path, each with a blind spot the next one has to catch. 
 
-Anthropic trains Claude against a constitution: a written document that describes the values and behavior the model should exhibit. Anthropic revises this document over time, and the most recent published version is from January 2026. It sets a priority order for the model to follow when goals conflict: be broadly safe, be ethical, comply with guidelines, and be genuinely helpful to operators and users. That ordering matters because a helpful answer is sometimes unsafe. Higher-priority goals generally take precedence when they conflict, but important to understand that the model weighs them together rather than applying them in a rigid sequence. 
+Claude arrives with broad safety behavior in place, but it does not know the partner's data-handling rules, authorization model, or domain policy. 
+
+Before you start adding controls you need to understand:
+* how much safe behavior is already handled by the model, 
+* and how much is still yours to build 
+You need to understand this boundary clearly to avoid creating duplicate protections or assuming the model is enforcing a rule it has never seen.
+
+Anthropic trains Claude against a constitution: a written document that describes the values and behavior the model should exhibit. Anthropic revises this document over time, and the most recent published version is from January 2026. It sets a priority order for the model to follow when goals conflict: 
+1. be broadly safe, 
+2. be ethical, 
+3. comply with guidelines,
+4. and be genuinely helpful to operators and users. 
+That ordering matters because a helpful answer is sometimes unsafe. Higher-priority goals generally take precedence when they conflict, but important to understand that the model weighs them together rather than applying them in a rigid sequence. 
 
 Treat safety as four layers stacked from Claude outward. Each one covers something the layer below cannot, and each one fails in a way the next must catch:
 * Model trained behaviour (owner: Anthropic) - covers broad classes of harmful or unsafe output, applied to every request without configuration. It does not cover your domain policy, your data rules, your authorization model. 
@@ -17,8 +29,7 @@ Each added layer costs latency and engineering. Four layers means four places to
 ## Trained policy vs Domain policy
 
 Trained refusals can be mistaken for a domain policy. It may seem that if Claude already refuses broadly harmful requests in testing, then it covers your partner's data handling policy. 
-
-A domain policy was conflated with trained alignment. Any rule that is specific to your partner must be enforced in a layer you build.
+Any rule that is specific to your partner must be enforced in a layer you build.
 
 ## LLM-system risk
 
@@ -56,13 +67,12 @@ On the API, responses return a refusal when streaming classifiers intervene. The
 
 As a rule, once a refusal is received, reset the conversation context before continuing: remove or rephrase the turn that triggered the refusal, or clear the history. Sending the next request on the same refused context returns further refusals.
 
-How the guardrail layer behaves under failure? Anthropic's built-in model safety controls fail closed, that is they block the traffic on failure. ON the other hand the Architect has to decide what happens when the Guardrails fail, should it fail open (allow traffic) or fail closed (block the traffic). Each gate can pass, block, or fail, and each fail resolves to the direction you chose.
+How the guardrail layer behaves under failure? Anthropic's built-in model safety controls fail closed, that is they block the traffic on failure. On the other hand the Architect has to decide what happens when the Guardrails fail, should it fail open (allow traffic) or fail closed (block the traffic). Each gate can pass, block, or fail, and each fail resolves to the direction you chose.
 
 ## Skill supply-chain security
 
 An untrusted skill can carry a code-execution exploit: logic that runs commands, reaches out to the network, or touches files the moment it's invoked.
 
-Audit and Log analysis:
 The defense must move earlier in the chain. Before you can trust and call a skill, you need to audit it: open the bundle and read it for two things.
 A skill that passes review clean can still reach out at runtime to fetch code that was never in the package you read. The log review can reveal this.
 
@@ -98,19 +108,26 @@ A regulator wants a durable, queryable record of inputs, outputs, and decision p
 ## Routing decisions to people by stakes, not by volume
 
 A low-confidence, irreversible, high-cost decision almost always needs human review.
-Let confident, reversible, low-cost decisions through. A confident, easily reversed, low-cost decision can usually run without a human. 
+A confident, easily reversed, low-cost decision can usually run without a human. 
+
+Deciding which decisions count as high stakes takes judgment. 
+A routing rule has three controls: 
+* a confidence threshold, 
+* the cost of a wrong answer, 
+* and a reversibility setting.
 
 Where the human sits is a tradeoff between safety and speed.
-
-What you put in front of the reviewer determines whether the review is accurate. Ensure your reviewers have three things: the inputs that drove the decision, the model's output, and the reason it was flagged. Without the inputs, they cannot tell if the output is correct. 
-
-Consent fatigue is when a system asks for approval dozens of times in a row, and reviewers start clicking through and approving items without reading or providing the quality of review needed. That pattern is what led to plan-level review in Claude Code, where a person approves the plan rather than each step.
-
 Place a gate before any irreversible or high-stakes action an agent would otherwise take autonomously.
 
-Routing by volume rather than stakes either overwhelms reviewers and risks review quality degradation, or allows a high-stakes, irreversible action with no gate at all.
+What you put in front of the reviewer determines whether the review is accurate. Ensure your reviewers have three things: 
+* the inputs that drove the decision, 
+* the model's output, 
+* and the reason it was flagged. 
+Without this information they cannot tell if the behaviour is correct. 
 
-Deciding which decisions count as high stakes takes judgment. A routing rule has three controls: a confidence threshold, the cost of a wrong answer, and a reversibility setting.
+Consent fatigue - is when a system asks for approval dozens of times in a row, and reviewers start clicking through and approving items without reading or providing the quality of review needed. That pattern is what led to plan-level review in Claude Code, where a person approves the plan rather than each step.
+
+Routing by volume rather than stakes either overwhelms reviewers and risks review quality degradation, or allows a high-stakes, irreversible action with no gate at all.
 
 ## Regulations
 
@@ -123,5 +140,3 @@ three things you own:
 * an evidence artifact that shows it is live.
 
 A control no one can demonstrate is indistinguishable from one that is not running.
-
-Each obligation needs a control, a named owner, and a living evidence artifact that is revalidated as the deployment changes.
