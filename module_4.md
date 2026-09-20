@@ -4,21 +4,15 @@ Decision log - A record of each architectural choice that captures not just the 
 
 Reversal cost - What it costs to undo a decision after the system has been built around it
 
-## 
+## Discovery
 
-You can break down a request, pick a pattern, size a use case, build evals as acceptance criteria, instrument observability, and stand up an auditable control set for a regulated workload. What none of that resolved is the part of the job that happens in rooms with stakeholders: the discovery conversation where the real requirements are set, the approval meeting where a tradeoff is won or lost, the handoff where your design either survives your absence or quietly degrades.
+Discovery reveals whether you are solving the right problem.
+
+You can break down a request, pick a pattern, size a use case, build evals as acceptance criteria, instrument observability, and stand up an auditable control set for a regulated workload. What none of that resolved is the part of the job that happens in rooms with stakeholders.
 
 project lifecycle: discovery → design → handoff → monitoring → iteration. 
 
 Discovery and tradeoff framing do the discovery-and-design work; 
-the feedback loop is the monitoring-and-iteration phase; 
-documentation is the handoff phase; and entry-point selection with the outcome document closes the loop. 
-
-Identifying the phase a decision belongs to is what lets you judge when one phase is ready to move to the next.
-
-## Discovery
-
-Discovery reveals whether you are solving the right problem.
 
 A discovery conversation functions as a three-step filter: 
 * listen - listen to the business goal in plain language and pay attention to the meaning behind the word. Stakeholders usually describe the outcome they want but not the constraint you need to design for.
@@ -39,7 +33,11 @@ To turn discovery into requirements ask:
 * What must the system cost - budget constraints, latency, volume.
 * What the system must prove - it must be able to produce something of value. 
 
-Each item found in discovery becomes one row in a translation table. The row captures the stakeholder statement as it was said, the constraint it implies, the architectural decision that constraint forces, and any assumption you are documenting when the constraint has not yet been confirmed.
+Each item found in discovery becomes one row in a translation table. The row captures:
+* the stakeholder statement as it was said, 
+* the constraint it implies, 
+* the architectural decision that constraint forces, 
+* and any assumption you are making when the constraint has not yet been confirmed.
 
 Example:
 1. Stakeholder statement - "It just needs to read the form and route it."
@@ -76,11 +74,9 @@ Design proof that the solution fits the buyer's context is part of the demo's jo
 
 The first creates interest; only the second creates confidence.
 
-Instead of showing the buyer's world, it shows a polished but generic set of features.
-
 Demo design choises:
 * Scenario selection - Choose a workflow the buyer will immediately recognize from their own operations.
-* Limit placement - Decide in advance which one or two limitations the demo will identify.
+* Limitations placement - Decide in advance which limitations the demo will identify.
 * Data preparation - Use information that resembles the buyer's data in structure and volume.
 
 ## Scoping
@@ -90,10 +86,10 @@ In joint scoping, you keep that trust by bringing a structured view of the probl
 
 ## Objections
 
-* Technical objections in a sales cycle usually fall into three categories. 
-* Capability objections ask whether the system can do the thing at all. 
-* Governance and compliance objections ask whether the deployment can be trusted, controlled, and evidenced in a way the buyer can defend. 
-* Design-choice objections ask why you made this choice instead of another. 
+Objections usually fall into these categories. 
+* Capability objections - ask whether the system can do the thing at all. 
+* Governance and compliance objections - ask whether the deployment can be trusted, controlled, and evidenced. 
+* Design-choice objections - ask why you made this choice instead of another. 
 
 ## Approval must be an informed choice
 
@@ -120,6 +116,7 @@ The feedback loop is a decision layer that sits above the observability stack.
 That judgment layer is what makes the system manageable instead of just measurable.
 A live deployment drifts without active monitoring. A drift with no trigger is invisible.
 Decide which signals deserve attention, and which are noise.
+
 A feedback loop maps each signal to a trigger, an owner, and a required action.
 
 ## SLA
@@ -144,7 +141,11 @@ Architecture documentation serves three readers:
 
 A document built for one of these readers and not the others is incomplete even when it is detailed.
 
-The document must carry the decisions that were made, the alternatives that were rejected, and the reason each rejection happened.
+The document must carry:
+* the decisions that were made, 
+* the alternatives that were rejected, 
+* and the reason each rejection happened.
+
 The costly failure is a successor who reverses a load-bearing decision because the rationale was never documented.
 
 The diagram tells what the system is, not why it is this way.
@@ -158,11 +159,14 @@ The diagram and the decision log both document intention, but not the evidence.
 
 ## Outcome document
 
-The artifact that makes a deployment's value legible to a sponsor who was not on the build. 
+An Outcome Document is a concise, executive-facing artifact designed to make the real-world value of a completed deployment clearly visible and understandable to stakeholders who were not involved in the day-to-day build.
 
+Engineering teams focus on outputs (code shipped, tickets closed, systems integrated).
+Sponsors and executive leaders care about outcomes. 
+
+Example:
 Volume, latency, and error rate are real and worth tracking, but none of them are a business outcome. 
-The fields that would have made the document usable for the CFO conversation were the before-and-after on the business metric the use case targeted.
+The information that makes the document usable for the CFO conversation is the before-and-after on the business metric the use case targeted.
 
 Without the before number, there is no story. 
 Without control, the after number is an assertion.
-

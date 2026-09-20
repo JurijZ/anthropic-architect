@@ -17,7 +17,11 @@ Team setup - helps the team get the environment, the reusable assets, and the sp
 Developer workflows - raise the bar on how the team works day to day without lowering the bar on quality.
 Operational support -is what you do when the team encounters something unexpected within the system.
 
-The four team-setup decisions an Architect owns: environment, rollout, skills distribution, and spend.
+The four team-setup decisions an Architect owns:
+* environment, 
+* rollout, 
+* skills distribution, 
+* and spend.
 
 A project-level baseline: a shared CLAUDE.md, an agreed set of tools and MCP servers, and a permission posture.
 
@@ -35,11 +39,13 @@ Skill packages are repeatable procedures that appear as versioned, reusable unit
 
 There are four ways to deploy a Skill to a team, and they differ in who can access it and how much control you retain: 
 * An owner-provisioned Skill, uploaded under Organization settings > Skills, becomes available to everyone in the organization at once. Example: A capability that genuinely should be available to every member, with no need for versioning or rollback.
-* When a Skill should reach only select members, you bundle one or more Skills into a plugin and assign that plugin to a group. Example: A compliance-review procedure every department must run identically, that must be centrally updatable and roll-back-able.
+* When a Skill should reach only select members, you bundle one or more Skills into a plugin and assign that plugin to a group. 
+Example: A compliance-review procedure every department must run identically, that must be centrally updatable and roll-back-able.
 * Claude Code project Skills: filesystem artifacts that live in the project repository (.claude/skills/), so they version with the repository itself and are scoped to the projects that carry them. 
 * API Skills, called programmatically by the partner's own products.
 
-A plugin provides org and group targeting plus version-controlled updates and rollback. An org-provisioned Skill would reach everyone but offers no versioning or rollback path.
+A plugin provides org and group targeting plus version-controlled updates and rollback. 
+An org-provisioned Skill would reach everyone but offers no versioning or rollback path.
 
 ## Spend posture
 
@@ -72,6 +78,7 @@ The checklist should include questions that address all four dimensions of verif
 * Human understanding: The developer submitting the change can explain what the code does and why, including how it handles the inputs it was not explicitly tested against.
 
 Can the person merging PR explain what it does and why? 
+
 Speed had quietly replaced understanding, which is exactly the judgment erosion diligence exists to catch.
 
 AI-generated code must be kept to the same review standard as hand-written code.
@@ -81,6 +88,7 @@ AI-generated code must be kept to the same review standard as hand-written code.
 When an operational issue lands, the team usually identifies a symptom, not a cause. 
 Many operational symptoms trace to a small set of architectural causes. Identifying these allows the team to reason clearly from what they see to where to look.
 
+Examples:
 Output quality degraded gradually, but there was no code change	- A model or prompt change, or retrieval drift as the corpus grew.	
 Latency spiked - Context size grew, a tool got slow, or a cache stopped hitting.	
 Intermittent tool failures - Authorization, rate limits, or an unhandled error path.	
