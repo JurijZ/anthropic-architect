@@ -2,7 +2,9 @@
 
 Decision log - A record of each architectural choice that captures not just the decision but the alternatives rejected and the tradeoff each resolved, so a successor does not reverse a load-bearing choice for an understandable wrong reason.
 
-Reversal cost - What it costs to undo a decision after the system has been built around it
+Reversal cost - What it costs to undo a decision after the system has been built around it.
+
+Triage refers to the process of sorting and prioritizing tasks. Originally a medical term used to prioritize patients for treatment based on the severity of their condition
 
 ## Discovery
 
@@ -23,13 +25,13 @@ Stakeholders usually speak in preferences, but design decisions are made against
 
 Example:
 Imagine a stakeholder says, "We want this to feel seamless." If you write down "seamless" as the requirement, you have not learned enough to design anything yet.
-The real work starts with the next question: what would make it feel not seamless? That is where the hidden constraints begin to appear. You turn business language into something the system can build and be measured against.
+The real work starts with the next question: what would make it feel NOT seamless? That is where the hidden constraints begin to appear. You turn business language into something the system can build and be measured against.
 
 Ask what would break that experience, what the user must never notice, what has to happen behind the scenes, and what must still be true when something goes wrong. A testable, bounded constraint is what the design can be built against.
 
 To turn discovery into requirements ask:
 * What the system must do - capabilities.
-* What the system must not do - prohibited actinos and constraints.
+* What the system must not do - prohibited actions and constraints.
 * What must the system cost - budget constraints, latency, volume.
 * What the system must prove - it must be able to produce something of value. 
 
@@ -93,9 +95,12 @@ Objections usually fall into these categories.
 
 ## Approval must be an informed choice
 
-A stakeholder who approved a recommendation without understanding the reversal cost has not made an informed choice. The CTO heard a per-call figure and a simplicity argument and reasonably said yes. The reversal-cost element was the one factor that would have changed the decision. Name all three elements every time and name the reversal cost especially when the design feels obviously simpler.
-
+A stakeholder who approved a recommendation without understanding the reversal cost has not made an informed choice. 
 The CTO approved a per-call number, not a monthly bill, and not the cost of unwinding a decision later.
+
+The CTO heard a per-call figure and a simplicity argument and reasonably said yes. 
+The reversal-cost element was the one factor that would have changed the decision. 
+Name all elements every time and name the reversal cost especially when the design feels obviously simpler.
 
 Example:
 Workflow pattern with per-interaction logging built in. 
@@ -146,7 +151,7 @@ The document must carry:
 * the alternatives that were rejected, 
 * and the reason each rejection happened.
 
-The costly failure is a successor who reverses a load-bearing decision because the rationale was never documented.
+When you don't document the 'why' behind a critical decision, a future successor is likely to reverse it—resulting in a costly mistake.
 
 The diagram tells what the system is, not why it is this way.
 
@@ -155,7 +160,7 @@ The completeness test is whether a competent Architect who was not in the room c
 Example:
 A performance issue prompted a proposal to switch context strategies, the replacement made the switch, and it reintroduced a data-handling pattern that violated the deployment's data-residency constraint. 
 
-The diagram and the decision log both document intention, but not the evidence.
+While architecture diagrams and decision logs record our finalized plans, they typically omit the underlying research, benchmarks, and evidence that justified those choices.
 
 ## Outcome document
 

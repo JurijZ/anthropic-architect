@@ -42,7 +42,8 @@ Any rule that is specific to your partner must be enforced in a layer you build.
 To identify week points walk the request and data paths together. At each entry point, user input, retrieved content, tool outputs, the model's own output, and the logs. The risk assessment should be a written artifact. For each identified risk, record the category, the affected component, a likelihood-and-impact judgment, and the mitigation control with an owner and an evidence artifact.
 
 Examples:
-Treat retrieved text as untrusted and screen tool/content inputs, not just user input.
+Treat retrieved text as untrusted.
+Screen tool/content inputs, not just user input.
 Action-authorization check that runs before the tool executes.
 Limit input so a large document cannot truncate the work silently.
 Server-side redaction of sensitive fields before anything is logged.
@@ -67,7 +68,8 @@ On the API, responses return a refusal when streaming classifiers intervene. The
 
 As a rule, once a refusal is received, reset the conversation context before continuing: remove or rephrase the turn that triggered the refusal, or clear the history. Sending the next request on the same refused context returns further refusals.
 
-How the guardrail layer behaves under failure? Anthropic's built-in model safety controls fail closed, that is they block the traffic on failure. On the other hand the Architect has to decide what happens when the Guardrails fail, should it fail open (allow traffic) or fail closed (block the traffic). Each gate can pass, block, or fail, and each fail resolves to the direction you chose.
+How the guardrail layer behaves under failure? Anthropic's built-in model safety controls fail closed, that is they block the traffic on failure. 
+On the other hand the Architect has to decide what happens when the Guardrails fail, should it fail open (allow traffic) or fail closed (block the traffic). Each gate can pass, block, or fail, and each fail resolves to the direction you chose.
 
 ## Skill supply-chain security
 
@@ -83,7 +85,6 @@ Watch for out-of-scope operations - behavior that doesn't match the job it claim
 The retrieval corpus can over-represent or under-represent groups, so the context the model sees is already skewed.
 The framing of the prompt can encode an assumption that pushes outcomes in one direction.
 The examples used in few-shot prompting can carry the same skew the corpus does.
-What happens to the model's output after it is produced, can direct some groups down different paths.
 
 Which of the system points could skew the outcome?
 
