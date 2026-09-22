@@ -1,6 +1,6 @@
 ## Glossary
 
-Champion-per-department rollout - An adoption pattern that enables one champion per team first to prove the workflow, then seeds adoption batch by batch.
+Champion-per-department rollout - An adoption pattern that enables one champion per team first to prove the workflow, then extend adoption to others.
 
 Runbook - A captured set of known symptom-to-cause-to-action paths that lets a team resolve recurring operational issues without the Architect.
 
@@ -31,10 +31,9 @@ The hard part is distribution governance: who can reach, update, and revoke each
 
 A shared skill needs versioning, group targeting, or rollback, distribute it inside an organization-managed plugin and identify an owner.
 
-Repeated procedures that usually live in people's heads become Skills 
-
 ## Skills distribution
 
+Repeated procedures that usually live in people's heads become Skills 
 Skill packages are repeatable procedures that appear as versioned, reusable units. 
 
 There are four ways to deploy a Skill to a team, and they differ in who can access it and how much control you retain: 
@@ -68,7 +67,7 @@ The team maybe using Claude as a question-answering box and never advances to th
 
 Diligence - taking responsibility for what we do with AI and how we do it.
 
-Developers must take responsibility for verifying the AI generated outputs. Engineers accept output they no longer fully understand because it looks right and passes a check.
+Developers must take responsibility for verifying the AI generated outputs.
 
 The concrete deliverable that diligence produces is a verification checklist: the explicit set of checks an AI-generated output must pass before it reaches production.
 The checklist should include questions that address all four dimensions of verification: 
@@ -78,10 +77,9 @@ The checklist should include questions that address all four dimensions of verif
 * Human understanding: The developer submitting the change can explain what the code does and why, including how it handles the inputs it was not explicitly tested against.
 
 Can the person merging PR explain what it does and why? 
-
-Speed had quietly replaced understanding, which is exactly the judgment erosion diligence exists to catch.
-
 AI-generated code must be kept to the same review standard as hand-written code.
+
+When speed had quietly replaced understanding, this is exactly the judgment erosion diligence exists to catch.
 
 ## Support
 
