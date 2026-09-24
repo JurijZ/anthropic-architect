@@ -48,7 +48,7 @@ Each choice costs you something, naming that costs is the objective.
 ## Entry points
 
 Anthropic designs different products to act as the primary "way in" for different audiences to access Claude:
-* Claude.ai (web, mobile, and desktop apps) - This is the entry point for applied AI users, not builders. The consumer tiers fit individuals and small teams and Claude for Work fits organizations that need governance and identity controls on the same product.
+* Claude.ai (web, mobile, and desktop apps) - This is the entry point for AI users, not builders. The consumer tiers fit individuals and small teams and Claude for Work fits organizations that need governance and identity controls on the same product.
 * Claude Code (terminal, IDE plugin, desktop, web) - For engineers doing real development work.
 * Claude Cowork - A desktop agent for non-developers that works with local files and applications, automating file and task management on the user's machine under configurable permissions.
 * Claude in Chrome - A browsing agent that operates inside the Chrome browser, navigating pages and taking actions on behalf of the user.
