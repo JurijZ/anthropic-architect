@@ -54,6 +54,8 @@ Anthropic designs different products to act as the primary "way in" for differen
 * Claude in Chrome - A browsing agent that operates inside the Chrome browser, navigating pages and taking actions on behalf of the user.
 * Claude for Excel - A spreadsheet agent that operates inside Excel, working directly with cells, formulas, and structured data.
 
+Custom applications implement product related entry point.
+
 Multi entry points - a deployment that spans more than one entry point exposes a class of problems a single-entry-point system does not.
 Which entry-point owns which task, and why?
 
@@ -134,7 +136,7 @@ Mitigation: Use system prompts, structured outputs, and code execution for anyth
 
 The entry points describe who reaches Claude,
 the build-time interfaces all describe how code reaches Claude, 
-the route describes where the request runs.
+the route describes where the request is processed.
 
 ### Entry point
 What a person or system directly interacts with. Entry Points are the wrappers that decide who can talk to Claude and how.
@@ -168,7 +170,7 @@ skills - A versioned, reusable unit (instructions plus optional scripts) that pa
 agent teams - Multiple agents working as coordinated peers, each owning part of a larger goal.
 dynamic workflows - Assemble the steps of a workflow at runtime rather than fixing them in advance.
 
-Cost: Reaching for a heavier primitive than the job requires is paid for in latency, tokens, and operational surface area, every request. 
+Cost: Reaching for a heavier primitive than the job requires is paid for in latency, tokens, and operational surface area. 
 E.g., Using a team of agents when a single tool call would suffice.
 
 Complexity: Each primitive added to a design is a part to build, observe, and govern. The discipline is to use the fewest primitives necessary to meet the requirement.
@@ -179,8 +181,8 @@ Complexity: Each primitive added to a design is a part to build, observe, and go
 A rule that needs to be right every time was handed to a system that is right most of the time. That tradeoff is easy to miss during scoping because the model handles the clean cases correctly, and clean cases are what you see in demos and early testing. The cost of "most of the time" doesn't reveal itself until you audit and by then the partner is calling.
 
 
-## Skills
-Alongside choosing a pattern, decide how the capability is packaged. 
+## Capability packaging
+ 
 Three options sit on a spectrum: 
 1. a prompt-only solution (instructions alone), 
 2. a direct tool use (the model calls functions in your code),

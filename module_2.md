@@ -9,8 +9,10 @@ A contract between a data controller and a data processor defining how personal 
 Generator-Verifier loop
 A two-stage pattern in which a model-generated output is checked by a second pass before being used downstream. The verifier may be a deterministic code-based check (schema validation, comparison against an authoritative value) or a second model call scoped to evaluation. Used as a compensating control where the underlying task requires more precision than single-pass generation reliably provides.
 
-Evaluator-Optimizer (Generator-Critic) loop
-Generator creates a candidate output, Evaluator analyzes the candidate output against clear criteria, testing conditions, or quality benchmarks and generates structured feedback, highlighting errors, edge cases, or areas for improvement.
+The Evaluator-Optimizer design pattern (a.k. Generator-Critic or Actor-Critic) is an iterative agentic architecture where two distinct processes collaborate: one produces candidates, and the other reviews them to drive automated refinement.
+Generator - Takes the original task prompt (plus any incoming feedback) and produces a draft solution.
+Evaluator - Analyzes the output produced by the Generator against predefined metrics, unit tests, style rules, or quality benchmarks.
+Optimizer - The execution pipeline that orchestrates the flow between the Generator and Evaluator.
 
 Transient error
 A transient error is a temporary failure that is expected to resolve on its own without any permanent fix, meaning if you try the same request again after a short wait, it will likely succeed.
@@ -97,7 +99,11 @@ A POC answers the question "can the system do this", but it does not answer "wha
 * If the primary model or endpoint is unavailable, the system should automatically route the request to an alternative such as a different model tier or a cached response. It should not raise an error to the user. Fallback behavior should be tested as part of your eval suite.
 * Circuit breaker measures the error rate on a downstream dependency and trips when errors exceed an established threshold. Once tripped, requests fail immediately rather than waiting for a timeout. This prevents one degraded dependency from taking down the broader system.
 
-Reliability controls must sit at the right stage to be effective: new attempts belong close to the API call, circuit breakers at the service boundary, and fallback chains in the orchestration layer. Placing them in the wrong layer means protecting the wrong part of the system and leaving the right part exposed.
+Reliability controls must sit at the right stage to be effective:
+* new attempts belong close to the API call, 
+* circuit breakers at the service boundary, 
+* and fallback chains in the orchestration layer. 
+Placing them in the wrong layer means protecting the wrong part of the system and leaving the right part exposed.
 
 Model version pinning applies to any architecture. It is an operational discipline, not an architecture choice. 
 
@@ -110,15 +116,15 @@ Model version pinning applies to any architecture. It is an operational discipli
 
 ## Sizing
 
-Output quality is validated through evals, and system reliability is validated through architecture controls like retries, fallbacks, and circuit breakers. Meeting both bars is what production readiness means.
-Sizing tells you whether a specific business problem can meet that bar, and what constraints govern the design. 
+Output quality is validated through evals, and system reliability is validated through architecture controls like retries, fallbacks, and circuit breakers. Sizing tells you whether a specific business problem can meet that bar, and what constraints govern the design.
+
 Feasibility fits into one of three states: 
 * feasible as scoped, 
 * feasible with constraints,
 * not feasible. 
 Identifying the state correctly is what makes a scoping document useful.
 
-Four inputs drive the model: call volume, token budget per request, model tier, and sensitivity parameters.
+Four inputs drive the sizing: call volume, token budget per request, model tier, and sensitivity parameters.
 
 * Step 1: Estimate call volume. How many requests are made per day or per month?
 * Step 2: Set the token budget per request. The token budget has two components: input tokens (system prompt, retrieved context, and user message) and output tokens (expected response length). Model the distribution rather than just the average. If document lengths vary widely, the cost model should account for the typical cases as well as the extremes. If the system prompt is long and stable, prompt caching can meaningfully reduce input costs.
